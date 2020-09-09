@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd23c2727acce649ad5a65b942bdc1e, type: 3}
+  m_Name: Scripts
+  m_EditorClassIdentifier: 
+  AbilityScript: {fileID: 0}
+  abilityType: 0
+  bImmediately: 0
+  bIsCancelable: 1
+  bIsBlockingOtherAbilities: 1
+  targetType: 0
+  castPoint: 0
+  totalTime: 0
+  maxLevel: 1
+  channelStartTime: 0
+  channelInterval: 0
+  channelEndTime: 0
+  abilityTags: []
+  cancelAbilitiesWithTags: []
+  blockAbilitiesWithTags: []
+  activationOwnedTags: []
+  sourceRequiredTags: []
+  sourceBlockedTags: []
+  targetRequiredTags: []
+  targetBlockedTags: []
+  Buff_CoolDown: {fileID: 0}
+  Buff_Cost: {fileID: 0}
+  child_UnityDatas: []
+  child_BaseDatas_Int: 
+  child_BaseDatas_Bool: 
+  child_BaseDatas_Float: []
+  child_BaseDatas_String: []

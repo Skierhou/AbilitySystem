@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0cd23c2727acce649ad5a65b942bdc1e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - AbilityScript: {instanceID: 0}
+  - Buff_CoolDown: {fileID: 11500000, guid: e666b0dfaf0a62240a8a4f3570df89be, type: 3}
+  - Buff_Cost: {fileID: 11500000, guid: e666b0dfaf0a62240a8a4f3570df89be, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

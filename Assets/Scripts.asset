@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd23c2727acce649ad5a65b942bdc1e, type: 3}
+  m_Name: Scripts
+  m_EditorClassIdentifier: 
+  AbilityScript: {fileID: 0}
+  abilityType: 0
+  bImmediately: 0
+  bIsCancelable: 1
+  bIsBlockingOtherAbilities: 1
+  targetType: 0
+  castPoint: 0
+  totalTime: 0
+  maxLevel: 1
+  channelStartTime: 0
+  channelInterval: 0
+  channelEndTime: 0
+  abilityTags: []
+  cancelAbilitiesWithTags: []
+  blockAbilitiesWithTags: []
+  activationOwnedTags: []
+  sourceRequiredTags: []
+  sourceBlockedTags: []
+  targetRequiredTags: []
+  targetBlockedTags: []
+  Buff_CoolDown: {fileID: 11500000, guid: e666b0dfaf0a62240a8a4f3570df89be, type: 3}
+  Buff_CoolDown_Data:
+    attributeType: 0
+    modifierOption: 0
+    modifierType: 0
+    attributeMagnitudeList: []
+    durationPolicy: 0
+    duration: 0
+    interval: 0
+    level: 0
+    stack: 0
+  Buff_Cost: {fileID: 11500000, guid: e666b0dfaf0a62240a8a4f3570df89be, type: 3}
+  Buff_Cost_Data:
+    attributeType: 0
+    modifierOption: 0
+    modifierType: 0
+    attributeMagnitudeList: []
+    durationPolicy: 0
+    duration: 0
+    interval: 0
+    level: 0
+    stack: 0
+  child_UnityDatas_Keys: []
+  child_UnityDatas: []
+  child_BaseDatas_Int: 000000000000000000000000000000000000000000000000
+  child_BaseDatas_Bool: 
+  child_BaseDatas_Float:
+  - 0
+  - 0
+  child_BaseDatas_String: []
+  list_BaseDatas_Key: []
+  list_BaseDatas_Index: 
+  list_BaseDatas_Length: 
+  list_BaseDatas_Int: 
+  list_BaseDatas_Float: 
+  list_BaseDatas_Bool: 
+  list_BaseDatas_String: 
