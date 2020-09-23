@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 public static class ConfigHelper
 {
@@ -22,9 +23,9 @@ public static class ConfigHelper
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Field | AttributeTargets.Struct, AllowMultiple = false)]
 public class Config : Attribute
 {
-    public string ConfigFileName = null;
+    public string ConfigFileName = "Default";
     public Config() { }
-    public Config(string inFileName) 
+    public Config(string inFileName)
     {
         ConfigFileName = inFileName;
     }
@@ -39,8 +40,6 @@ struct FConfigData
 
 public class ConfigManager : Singleton<ConfigManager>
 {
-    //文件名
-    private const string CONFIGPATH = "Configs";
     //注释分隔符
     private const char NOTESIGN = ';';
     //类名修饰
@@ -59,15 +58,17 @@ public class ConfigManager : Singleton<ConfigManager>
     private const char LISTEND = '}';
     private const char LISTSPLITSIGN = ',';
     //配置文件路径
-    private static string DirectionPath = UnityEngine.Application.dataPath + "/../" + CONFIGPATH;
+#if UNITY_EDITOR
+    public static string DirectionPath = UnityEngine.Application.dataPath + "/../Configs";
+#else
+    public static string DirectionPath = UnityEngine.Application.streamingAssetsPath+"//Configs";
+#endif
     //存取所有类的配置信息Map
     private Dictionary<Type, Dictionary<string, string>> m_ConfigDict = new Dictionary<Type, Dictionary<string, string>>();
     //当前类型存在的配置信息列表
     private Dictionary<Type, List<FConfigData>> m_ConfigDataMap = new Dictionary<Type, List<FConfigData>>();
     //当前数据具体存在位置
-    private Dictionary<Type, object> m_ConfigMap = new Dictionary<Type, object>();
-
-    private GameObject DataGo;
+    private Dictionary<Type, Dictionary<string, object>> m_FinnalDataMap = new Dictionary<Type, Dictionary<string, object>>();
 
     /// <summary>
     /// 初始化
@@ -76,11 +77,13 @@ public class ConfigManager : Singleton<ConfigManager>
     {
         if (!Directory.Exists(DirectionPath))
         {
-            Debug.LogWarning("不存在该配置路径文件，Path : " + DirectionPath);
+            Debug.Log("不存在该配置路径文件，Path : " + DirectionPath);
             return;
         }
 
         DirectoryInfo tDirectoryInfo = new DirectoryInfo(DirectionPath);
+
+        Debug.Log("Config 加载！" + (tDirectoryInfo is object));
 
         if (tDirectoryInfo != null)
         {
@@ -89,44 +92,58 @@ public class ConfigManager : Singleton<ConfigManager>
             {
                 if (files[i].FullName.EndsWith(FORMATSIGN))
                 {
+                    Debug.Log("Config 加载！" + files[i].FullName);
                     ReadFileConfig(files[i]);
+                    Debug.Log(File.ReadAllText(files[i].FullName, Encoding.GetEncoding("UTF-8")).ToString());
                 }
             }
         }
-        DataGo = new GameObject("ConfigData");
-        DataGo.SetActive(false);
+        InitCacheConfig();
+    }
+
+    public void InitCacheConfig()
+    {
         foreach (Type type in m_ConfigDict.Keys)
         {
-            object obj;
-            if (IsUnityComponent(type))
-                obj = DataGo.AddComponent(type);
-            else
-                obj = Activator.CreateInstance(type);
-            ObjectInitialize(obj);
-            m_ConfigMap.Add(type, obj);
+            Attribute attribute = type.GetCustomAttribute(typeof(Config));
+            if (attribute != null)
+            {
+                List<FConfigData> configDatas = GetObjectConfigList(type);
+                for (int i = configDatas.Count - 1; i >= 0; i--)
+                {
+                    List<FieldInfo> fieldInfos = configDatas[i].FieldInfoList;
+                    foreach (FieldInfo info in fieldInfos)
+                    {
+                        if (info.GetCustomAttribute(typeof(Config)) != null)
+                        {
+                            SetObjectProperty(configDatas[i].Type, info, type);
+                        }
+                    }
+                }
+            }
         }
+        Debug.Log("Config: TotalData---" + m_ConfigDict.Count + "   CacheData---" + m_FinnalDataMap.Count);
     }
-    /// <summary>
-    /// 具体外部拷贝数据使用
-    /// </summary>
+
     public void CopyConfig(object inObj)
     {
         Type type = inObj.GetType();
+
         while (IsVaildType(type))
         {
-            if (m_ConfigMap.TryGetValue(type, out object obj))
+            if (m_FinnalDataMap.TryGetValue(type, out Dictionary<string, object> tDict) && tDict != null)
             {
-                List<FConfigData> configList = GetObjectConfigList(inObj);
+                List<FConfigData> configList = GetObjectConfigList(type);
                 for (int i = configList.Count - 1; i >= 0; i--)
                 {
                     foreach (FieldInfo fieldInfo in configList[i].FieldInfoList)
                     {
                         Config tConfig = fieldInfo.GetCustomAttribute<Config>();
-                        if (tConfig != null)
+                        if (tConfig != null && tDict.ContainsKey(fieldInfo.Name))
                         {
                             if (fieldInfo.FieldType.ToString().Contains("System.Collections.Generic.List"))
                             {
-                                object objList = fieldInfo.GetValue(obj);
+                                object objList = tDict[fieldInfo.Name];
                                 object selfList = Activator.CreateInstance(fieldInfo.FieldType);
                                 fieldInfo.SetValue(inObj, selfList);
 
@@ -136,7 +153,7 @@ public class ConfigManager : Singleton<ConfigManager>
                             }
                             else
                             {
-                                fieldInfo.SetValue(inObj, fieldInfo.GetValue(obj));
+                                fieldInfo.SetValue(inObj, tDict[fieldInfo.Name]);
                             }
                         }
                     }
@@ -160,7 +177,7 @@ public class ConfigManager : Singleton<ConfigManager>
 
         if (File.Exists(file.FullName))
         {
-            FileStream tFS = File.Open(file.FullName, FileMode.Open);
+            FileStream tFS = File.Open(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
             StreamReader tReader = new StreamReader(tFS);
             Dictionary<string, string> tConfigDict = null;
             while (!tReader.EndOfStream)
@@ -188,7 +205,7 @@ public class ConfigManager : Singleton<ConfigManager>
                             tConfigDict = new Dictionary<string, string>();
                             m_ConfigDict.Add(tType, tConfigDict);
                         }
-                        else 
+                        else
                         {
                             tConfigDict = null;
                         }
@@ -243,6 +260,24 @@ public class ConfigManager : Singleton<ConfigManager>
     }
 
     /// <summary>
+    /// 读取Config缓存值
+    /// </summary>
+    /// <param name="inType">类型</param>
+    /// <param name="inFieldName">字段名</param>
+    /// <returns></returns>
+    public object ReadValueByType(Type inType, string inFieldName)
+    {
+        if (!string.IsNullOrEmpty(inFieldName)) return null;
+
+        if (m_FinnalDataMap.TryGetValue(inType, out Dictionary<string, object> tDict) && tDict != null)
+        {
+            if (tDict.TryGetValue(inFieldName, out object data))
+                return data;
+        }
+        return null;
+    }
+
+    /// <summary>
     /// 是否为unity组件
     /// </summary>
     /// <param name="inType"></param>
@@ -265,22 +300,22 @@ public class ConfigManager : Singleton<ConfigManager>
     /// </summary>
     bool IsVaildType(Type inType)
     {
-        return !(inType == typeof(MonoBehaviour) || inType == typeof(System.Object) || inType == typeof(UnityEngine.Object));
+        return !(inType == typeof(MonoBehaviour) || inType == typeof(System.Object) || inType == typeof(UnityEngine.Object) || inType == typeof(System.ValueType));
     }
 
     /// <summary>
     /// 获取当前类型需要配置的数据列表
     /// </summary>
-    List<FConfigData> GetObjectConfigList(object inObj)
+    List<FConfigData> GetObjectConfigList(Type inType)
     {
-        if (m_ConfigDataMap.TryGetValue(inObj.GetType(), out List<FConfigData> res) && res != null)
+        if (m_ConfigDataMap.TryGetValue(inType, out List<FConfigData> res) && res != null)
             return res;
 
         List<FConfigData> list = new List<FConfigData>();
         List<FieldInfo> tFieldInfoList;
         List<PropertyInfo> tPropertyInfoList;
 
-        Type tType = inObj.GetType();
+        Type tType = inType;
 
         while (tType != null && tType != typeof(MonoBehaviour) && tType != typeof(System.Object) && tType != typeof(UnityEngine.Object))
         {
@@ -294,15 +329,21 @@ public class ConfigManager : Singleton<ConfigManager>
 
                 tFieldInfoList = new List<FieldInfo>();
                 tPropertyInfoList = new List<PropertyInfo>();
-                if (tFieldInfos.Length > 0)
+                foreach (FieldInfo info in tFieldInfos)
                 {
-                    tFieldInfoList.AddRange(tFieldInfos);
+                    if (info.GetCustomAttribute(typeof(Config)) != null)
+                    {
+                        tFieldInfoList.Add(info);
+                    }
                 }
-                if (tProperties.Length > 0)
+                foreach (PropertyInfo info in tProperties)
                 {
-                    tPropertyInfoList.AddRange(tProperties);
+                    if (info.GetCustomAttribute(typeof(Config)) != null)
+                    {
+                        tPropertyInfoList.Add(info);
+                    }
                 }
-                list.Add(new FConfigData { Type = tType, FieldInfoList = tFieldInfoList, PropertyInfoList = tPropertyInfoList });
+                list.Add(new FConfigData { Type = tType.UnderlyingSystemType, FieldInfoList = tFieldInfoList, PropertyInfoList = tPropertyInfoList });
             }
             tType = tType.BaseType;
         }
@@ -318,28 +359,8 @@ public class ConfigManager : Singleton<ConfigManager>
             configData.PropertyInfoList = tPropertyInfoList;
             list[i] = configData;
         }
-        m_ConfigDataMap.Add(inObj.GetType(), list);
+        m_ConfigDataMap.Add(inType, list);
         return list;
-    }
-
-    /// <summary>
-    /// 类初始化调用
-    /// </summary>
-    void ObjectInitialize(object inObj)
-    {
-        List<FConfigData> list = GetObjectConfigList(inObj);
-
-        for (int i = list.Count - 1; i >= 0; i--)
-        {
-            foreach (FieldInfo fieldInfo in list[i].FieldInfoList)
-            {
-                Config tConfig = fieldInfo.GetCustomAttribute<Config>();
-                if (tConfig != null)
-                {
-                    SetObjectProperty(inObj, fieldInfo, list[i].Type);
-                }
-            }
-        }
     }
 
     /// <summary>
@@ -381,14 +402,11 @@ public class ConfigManager : Singleton<ConfigManager>
         }
     }
 
-    /// <summary>
-    /// 设置具体属性
-    /// </summary>
-    private void SetObjectProperty(object inObj, FieldInfo inInfo, Type inType)
+    void SetObjectProperty(Type inType, FieldInfo inInfo, Type inTargetType)
     {
         if (m_ConfigDict.TryGetValue(inType, out Dictionary<string, string> tDict) && tDict != null)
         {
-            if (tDict.TryGetValue(inInfo.Name.ToUpper(),out string tStr) && !string.IsNullOrEmpty(tStr))
+            if (tDict.TryGetValue(inInfo.Name.ToUpper(), out string tStr) && !string.IsNullOrEmpty(tStr))
             {
                 try
                 {
@@ -412,19 +430,19 @@ public class ConfigManager : Singleton<ConfigManager>
                                 methodInfo.Invoke(entityList, new object[] { Convert.ChangeType(tStrArray[i], type) });//相当于List<T>调用Add方法
                             }
                         }
-                        inInfo.SetValue(inObj, entityList);
+                        SaveDataToFinnalMap(inTargetType, inInfo.Name, entityList);
                     }
                     else
                     {
                         if (CheckIsStruct(tStr))
                         {
-                            object structObj = inInfo.GetValue(inObj);
+                            object structObj = inInfo.FieldType.Assembly.CreateInstance(inInfo.FieldType.FullName);
                             SetStructProperty(ref structObj, tStr.Substring(1, tStr.Length - 2));
-                            inInfo.SetValue(inObj, structObj);
+                            SaveDataToFinnalMap(inTargetType, inInfo.Name, structObj);
                         }
                         else
                         {
-                            inInfo.SetValue(inObj, Convert.ChangeType(tStr, inInfo.FieldType));
+                            SaveDataToFinnalMap(inTargetType, inInfo.Name, Convert.ChangeType(tStr, inInfo.FieldType));
                         }
                     }
                 }
@@ -434,6 +452,19 @@ public class ConfigManager : Singleton<ConfigManager>
                 }
             }
         }
+    }
+
+    void SaveDataToFinnalMap(Type type, string infieldName, object data)
+    {
+        if (!m_FinnalDataMap.TryGetValue(type, out Dictionary<string, object> tDict) || tDict == null)
+        {
+            tDict = new Dictionary<string, object>();
+            m_FinnalDataMap.Add(type, tDict);
+        }
+        if (!tDict.ContainsKey(infieldName))
+            tDict.Add(infieldName, data);
+        else
+            tDict[infieldName] = data;
     }
 
     private bool CheckIsStruct(string inStr)

@@ -67,7 +67,6 @@ public class FTagNode
     }
 };
 
-
 public class Window_AbilityTagEditor : EditorWindow
 {
     //private const string ABILITYTAGCONFIGPATH = UnityEngine.Application.dataPath + "/Configs";

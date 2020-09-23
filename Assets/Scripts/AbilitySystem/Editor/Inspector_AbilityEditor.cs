@@ -124,7 +124,7 @@ public class Inspector_AbilityEditor : Editor
             ability.Buff_CoolDown = (MonoScript)Buff_CoolDown.objectReferenceValue;
             if (ability.Buff_CoolDown != null)
             {
-                CreateScriptInfos(ability.Buff_CoolDown.GetClass());
+                //CreateScriptInfos(ability.Buff_CoolDown.GetClass());
                 CreateScriptInfos(ability.Buff_CoolDown_Data.GetType());
             }
             //CreateScriptInfos(ability.Buff_CoolDown);
@@ -141,7 +141,7 @@ public class Inspector_AbilityEditor : Editor
             EditorGUILayout.PropertyField(Buff_Cost);
             ability.Buff_Cost = (MonoScript)Buff_Cost.objectReferenceValue;
             if(ability.Buff_Cost != null)
-                CreateScriptInfos(ability.Buff_Cost.GetClass());
+                CreateScriptInfos(ability.Buff_Cost_Data.GetType());
             //CreateScriptInfos(ability.Buff_Cost);
             //EditorGUILayout.PropertyField(obj.FindProperty("Buff_Cost_Data"));
         }

@@ -5,23 +5,16 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public enum EMotionType
-{
-    MT_Additive,
-    MT_Override,
-};
-
-public class MotionClip
+class RootMotionClip
 {
     public EMotionType motionType;
     public EMotionType rotateType;
 
-    Vector3 velocity;
-    Vector3 rotate;
+    Animator animator;
 
-    public MotionClip(Vector3 motion)
+    public RootMotionClip(Animator animator)
     {
-        velocity = motion;
+        this.animator = animator;
     }
 
     public virtual void OnStart()
@@ -32,10 +25,10 @@ public class MotionClip
     }
     public virtual Vector3 GetVelocity()
     {
-        return velocity;
+        return animator.velocity;
     }
     public virtual Vector3 GetRotateRate()
     {
-        return rotate;
+        return animator.angularVelocity;
     }
 }
