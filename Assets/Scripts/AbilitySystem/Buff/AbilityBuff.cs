@@ -17,11 +17,11 @@ public struct FAbilityBuffData
 
 public class AbilityBuff : AbilityBase
 {
-    AbilitySystemComponent abilitySystem;
+    protected AbilitySystemComponent abilitySystem;
 
-    FAbilityBuffData buffData;
+    protected FAbilityBuffData buffData;
 
-    private bool bActive;
+    protected bool bActive;
     // 临时
     Coroutine cor_Buff;
 

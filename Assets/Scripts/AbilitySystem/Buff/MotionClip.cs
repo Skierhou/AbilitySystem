@@ -26,9 +26,11 @@ public class MotionClip
 
     public virtual void OnStart()
     {
+
     }
     public virtual void TickMotion()
     {
+
     }
     public virtual Vector3 GetVelocity()
     {

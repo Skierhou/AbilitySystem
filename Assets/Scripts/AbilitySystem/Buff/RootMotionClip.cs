@@ -16,19 +16,12 @@ class RootMotionClip
     {
         this.animator = animator;
     }
-
-    public virtual void OnStart()
-    {
-    }
-    public virtual void TickMotion()
-    {
-    }
     public virtual Vector3 GetVelocity()
     {
-        return animator.velocity;
+        return animator == null ? Vector3.zero : animator.velocity;
     }
     public virtual Vector3 GetRotateRate()
     {
-        return animator.angularVelocity;
+        return animator == null ? Vector3.zero : animator.angularVelocity;
     }
 }
