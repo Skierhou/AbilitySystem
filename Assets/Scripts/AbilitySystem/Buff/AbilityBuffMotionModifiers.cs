@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -10,41 +6,47 @@ using UnityEngine;
 /// </summary>
 public class AbilityBuffMotionModifiers : AbilityBuffModifiers
 {
-    CharacterController m_CC;
-    Transform m_Target;
+    /* 优先级 */
+    public int priority;
+    public List<float> duration;
 
-    public AbilityBuffMotionModifiers(AbilitySystemComponent systemComponent)
+    public EMotionType moveType;
+    public EDirectType direction;
+    public List<float> distance;
+
+    public EMotionType rotateType;
+    public EDirectType rotateAxis;
+    public List<float> rotateAngle;
+
+    public AnimationCurve moveCurve;
+    public AnimationCurve rotateCurve;
+
+    public AbilityBuffMotionModifiers(AbilitySystemComponent abilitySystem, Editor_FMotionModifierData data)
     {
-        m_CC = systemComponent.GetComponent<CharacterController>();
+        this.abilitySystem = abilitySystem;
+
+        priority = data.priority;
+        duration = data.duration;
+        moveType = data.moveType;
+        distance = data.distance;
+        rotateType = data.rotateType;
+        rotateAxis = data.rotateAxis;
+        rotateAngle = data.rotateAngle;
+        moveCurve = AnimationCurveManager.Instance.GetCurve(data.moveCurve);
+        rotateCurve = AnimationCurveManager.Instance.GetCurve(data.rotateCurve);
     }
 
     public override bool CanApplyModifier(int level = 0)
     {
-        return base.CanApplyModifier(level);
+        return abilitySystem.MovmentComponent.CanApplyMotion(priority);
     }
     public override void ApplyModifier(int level = 0)
     {
-        base.ApplyModifier(level);
-    }
-    void ApplyMotion()
-    {
-        
-    }
-
-    void MoveTo(Vector3 inWorldLoc, float inSpeed)
-    {
-        MovePoision((inWorldLoc - m_Target.position).normalized * inSpeed * Time.deltaTime);
-    }
-    void MovePoision(Vector3 inMovePos)
-    {
-        m_CC.Move(inMovePos);
-    }
-    void Rotate(Quaternion inRot, float inSpeed)
-    {
-        m_Target.rotation = Quaternion.LerpUnclamped(m_Target.rotation, inRot, inSpeed);
-    }
-    void Rotate(Vector3 inEuler, float inSpeed)
-    {
-        m_Target.rotation = Quaternion.LerpUnclamped(m_Target.rotation, Quaternion.LookRotation(inEuler), inSpeed);
+        abilitySystem.MovmentComponent.StartMotion();
+        abilitySystem.MovmentComponent.ApplyMotion(priority, moveType, direction, distance[level], duration[level], moveCurve);
+        if(rotateCurve != null)
+            abilitySystem.MovmentComponent.ApplyRotate(priority, rotateType, abilitySystem.transform.rotation, rotateAxis, rotateAngle[level], duration[level], rotateCurve);
+        else
+            abilitySystem.MovmentComponent.ApplyRotate(priority, rotateType, rotateAxis, rotateAngle[level], duration[level]);
     }
 }

@@ -2,139 +2,115 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
-public struct FAbilityData
+public enum ESelectTarget
 {
-    public int level;
-
-    //ability
-    public EAbilityType abilityType;
-    public ETargetType targetType;
-
-    //是否在冷却
-    public bool bCooldown;
-    public float coolDown;
-    public Action<float, float> OnCoolDownDeletage;
-
-    //是否强制释放
-    public bool bImmediately;
-    public bool bIsCancelable;
-    public bool bIsBlockingOtherAbilities;
-    //OnSpell回调时间点
-    public float castPoint;
-    public float totalTime;
-
-    public float channelStartTime;
-    public float channelInterval;
-    public float channelEndTime;
+    ST_None,
+    ST_WaitingSelect,
+    ST_SelectSuccess,
+    ST_SelectFail,
 };
 
-public interface IAbility
+public class Ability: AbilityBase, IAbility
 {
-    AbilitySystemComponent GetSourceAbilitySystemComponent();
-
-    //-------------------- ability call back interface -----------------------//
-    //void OnAbilityInit();
-    ///// 普通技能回调
-    //void OnAbilityStart();
-    //void OnSpell();
-    //void OnAbilityFinish();
-    ///// 引导类技能回调
-    //void OnChannelStart();
-    //void OnChannelThink();
-    //void OnChannelEnd();
-    ///// 开关类技能回调
-    //void OnAbilityToggleOn();
-    //void OnAbilityToggleOff();
-
-    ///// 被动技能回调
-    //void OnAbilityPassiveInit();
-
-    //-------------------- user interface -----------------------//
-    void CommitCooldown();
-    void CommitCost();
-    void CommitAbility();
-    // 打断
-    void CancelAbility();
-    // 主动结束
-    void EndAbility();
-
-    bool CanActivateAbility();
-    bool TryActivateAbility();
-    bool CanCost();
-}
-
-public class Ability: AbilityBase,IAbility
-{
-    //技能数据
+    #region 字段/属性
+    /// 技能数据
     public FAbilityData abilityData;
 
-    protected AbilitySystemComponent abilitySystem;
-
-    // 开关
-    bool bIsActive;
-
-    // 通用
+    /// 通用
     public AbilityBuff effect_CoolDown;
     public AbilityBuff effect_Cost;
 
-    //临时
-    Coroutine cor_Skill;
+    public List<FAbilityTagContainer> passive_ListenerTags;
+    public List<FAbilityTagContainer> triggerTags;
 
-    public Ability(FAbilityData data,AbilitySystemComponent abilitySystem)
+    /// Temp
+    Coroutine cor_Skill;
+    #endregion
+
+    #region IAbility接口实现
+    public override void InitAbility(AbilitySystemComponent abilitySystem, AbilityEditorData abilityEditorData)
     {
-        this.abilityData = data;
-        this.abilitySystem = abilitySystem;
-        OnAbilityInit();
+        base.InitAbility(abilitySystem, abilityEditorData);
+        abilityData.abilityType = abilityEditorData.abilityType;
+        abilityData.castPoint = abilityEditorData.castPoint;
+        abilityData.channelStartTime = abilityEditorData.channelStartTime;
+        abilityData.channelInterval = abilityEditorData.channelInterval;
+        abilityData.channelEndTime = abilityEditorData.channelEndTime;
+        abilityData.targetType = abilityEditorData.targetType;
+        abilityData.totalTime = abilityEditorData.totalTime;
+        if (abilityEditorData.Buff_CoolDown != null)
+        {
+            effect_CoolDown = AbilityManager.Instance.CreateAbility(AbilityTagManager.Instance.GetTagContainer(abilityEditorData.Buff_CoolDown.abilityTags[0]),abilitySystem) as AbilityBuff;
+        }
+        if (abilityEditorData.Buff_Cost != null)
+        {
+            effect_Cost = AbilityManager.Instance.CreateAbility(AbilityTagManager.Instance.GetTagContainer(abilityEditorData.Buff_Cost.abilityTags[0]),abilitySystem) as AbilityBuff;
+        }
+        InitTagList(ref passive_ListenerTags, abilityEditorData.passiveAbilityListenerTags);
+        InitTagList(ref triggerTags, abilityEditorData.passiveAbilityTriggerTags);
+
+        if (abilityData.abilityType == EAbilityType.EAT_PassiveAblity)
+        {
+            foreach (FAbilityTagContainer tag in passive_ListenerTags)
+            {
+                abilitySystem.RegisterEvent(tag, OnTriggerActivateAbility);
+            }
+        }
     }
-    public void CommitCooldown()
+    public override void DestroyAbility()
     {
-        effect_CoolDown?.ActivateBuff();
+        if (abilityData.abilityType == EAbilityType.EAT_PassiveAblity)
+        {
+            foreach (FAbilityTagContainer tag in passive_ListenerTags)
+            {
+                abilitySystem.RemoveEvent(tag, OnTriggerActivateAbility);
+            }
+        }
     }
-    public void CommitCost() 
+    public virtual void CommitCooldown()
     {
-        effect_Cost?.ActivateBuff();
+        if (effect_CoolDown != null)
+            abilitySystem.TryActivateBuff(effect_CoolDown, Level, 1, true);
     }
-    public void CommitAbility()
+    public virtual void CommitCost() 
+    {
+        if (effect_Cost != null)
+            abilitySystem.TryActivateBuff(effect_Cost, Level, 1, true);
+    }
+    public virtual void CommitAbility()
     {
         CommitCooldown();
         CommitCost();
     }
-    protected void SetSkillActive(bool inActive)
+    public virtual bool CanCost()
     {
-        bIsActive = inActive;
-        if (bIsActive)
+        return effect_Cost != null ? effect_Cost.CanActivateAbility() && effect_Cost.CanApplyModifier() : true;
+    }
+    public override bool TryActivateAbility(AbilitySystemComponent inTargetAbilitySystem = null)
+    {
+        if (abilityData.abilityType == EAbilityType.EAT_ToggleAbility)
         {
-            if(abilityData.bIsBlockingOtherAbilities)
-                abilitySystem.AddBlockTags(blockAbilitiesWithTags);
-            abilitySystem.AddActivateTags(abilityTags);
-            abilitySystem.AddActivateTags(activationOwnedTags);
+            ToggleTriggerTags(!IsActive);
+            SetSkillActive(!IsActive);
+            return true;
         }
-        else
+        else if (CanActivateAbility())
         {
-            if(abilityData.bIsBlockingOtherAbilities)
-                abilitySystem.RemoveBlockTags(blockAbilitiesWithTags);
-            abilitySystem.RemoveActivateTags(abilityTags);
-            abilitySystem.RemoveActivateTags(activationOwnedTags);
+            ActivateAbility(inTargetAbilitySystem);
+            return true;
         }
+        return false;
     }
-
-    public bool CanActivateAbility() 
+    public override bool CanActivateAbility()
     {
-        return !bIsActive && (effect_CoolDown != null ? !effect_CoolDown.IsAcitve() : true) && CanCost();
+        return !IsActive && abilityData.selectTargetType == ESelectTarget.ST_None && (effect_CoolDown != null ? effect_CoolDown.CanActivateAbility() : true) && CanCost();
     }
-    public bool CanCost()
+    public override void EndAbility()
     {
-        return effect_Cost != null ? effect_Cost.CanApplyModifier() : true;
-    }
-    public void CancelAbility() 
-    {
-        if(abilityData.bIsCancelable)
-            EndAbility();
-    }
-    public void EndAbility()
-    {
-        if (bIsActive)
+        base.EndAbility();
+        if (IsActive)
         {
             SetSkillActive(false);
             if (cor_Skill != null)
@@ -143,40 +119,89 @@ public class Ability: AbilityBase,IAbility
                 cor_Skill = null;
             }
             OnAbilityEnd();
-            abilitySystem.OnEndAbility(this);
+            CommitAbility();
         }
     }
-    public bool TryActivateAbility() 
+    #endregion
+
+    #region 技能实现接口
+    /// <summary>
+    /// 被动触发技能
+    /// </summary>
+    protected virtual void OnTriggerActivateAbility(AbilitySystemComponent inTargetAbilitySystem = null)
     {
         if (CanActivateAbility())
         {
-            if (abilityData.abilityType == (EAbilityType.EAT_PassiveAblity | EAbilityType.EAT_ToggleAbility))
+            OnAbilitySpell();
+            ToggleTriggerTags(true);
+        }
+    }
+    protected virtual void ToggleTriggerTags(bool bToggle)
+    {
+        foreach (FAbilityTagContainer tag in triggerTags)
+        {
+            if (bToggle)
             {
-                SetSkillActive(true);
-                OnAbilityStart();
+                if (!abilitySystem.TryActivateAbilityByTag(tag))
+                {
+                    abilitySystem.TryActivateBuffByTag(tag, Level);
+                }
             }
             else
             {
-                cor_Skill = abilitySystem.StartCoroutine(Skill());
+                abilitySystem.TryCancelAbilityByTag(tag);
             }
-            return true;
         }
-        return false;
     }
-
-    IEnumerator Skill()
+    /// <summary>
+    /// 激活技能
+    /// </summary>
+    protected virtual void ActivateAbility(AbilitySystemComponent inTargetAbilitySystem = null)
     {
-        bool bSelect = true;
+        if (abilityData.abilityType == EAbilityType.EAT_PassiveAblity)
+            OnTriggerActivateAbility(inTargetAbilitySystem);
+        else
+            cor_Skill = abilitySystem.StartCoroutine(Skill());
+    }
+    /// <summary>
+    /// 设置技能启用状态
+    /// </summary>
+    protected virtual void SetSkillActive(bool inActive)
+    {
+        IsActive = inActive;
+        if (IsActive)
+        {
+            abilitySystem.OnActivateAbilitySuccess(this);
+            if (IsBlockingOtherAbilities)
+                abilitySystem.AddBlockTags(blockAbilitiesWithTags);
+            abilitySystem.AddActivateTags(abilityTags);
+            abilitySystem.AddActivateTags(activationOwnedTags);
+        }
+        else
+        {
+            if (IsBlockingOtherAbilities)
+                abilitySystem.RemoveBlockTags(blockAbilitiesWithTags);
+            abilitySystem.RemoveActivateTags(abilityTags);
+            abilitySystem.RemoveActivateTags(activationOwnedTags);
+        }
+    }
+    /// <summary>
+    /// 常规技能实现
+    /// </summary>
+    protected virtual IEnumerator Skill()
+    {
+        abilityData.selectTargetType = ESelectTarget.ST_None;
         if (abilityData.targetType != ETargetType.ETT_None)
         {
             //等待选择目标
-            while (IsWaitingSelectTarget())
+            abilityData.selectTargetType = ESelectTarget.ST_WaitingSelect;
+            abilitySystem.WaitingSelectTargetEvent(abilityData.targetType, abilityData.selectKeyCode, abilityData.unSelectKeyCode, OnSelectTarget);
+            while (abilityData.selectTargetType == ESelectTarget.ST_WaitingSelect)
             {
                 yield return null;
             }
-            bSelect = IsSelectTargetSuccess();
         }
-        if (bSelect)
+        if (abilityData.selectTargetType != ESelectTarget.ST_SelectFail)
         {
             SetSkillActive(true);
             OnAbilityStart();
@@ -211,25 +236,26 @@ public class Ability: AbilityBase,IAbility
                     break;
             }
         }
-        yield return null;
+        abilityData.selectTargetType = ESelectTarget.ST_None;
     }
-
-    public AbilitySystemComponent GetSourceAbilitySystemComponent()
+    /// <summary>
+    /// 选择成功或失败后回调
+    /// </summary>
+    protected virtual void OnSelectTarget(bool IsSelectSuc, Vector3 selectPoint, AbilitySystemComponent targetSystems = null)
     {
-        return abilitySystem;
+        abilityData.selectTargetType = IsSelectSuc ? ESelectTarget.ST_SelectSuccess : ESelectTarget.ST_SelectFail;
     }
-
     /// <summary>
-    /// 等待选择目标
+    /// 技能开始
     /// </summary>
-    protected virtual bool IsWaitingSelectTarget() { return true; }
-    /// <summary>
-    /// 选择目标是否成功
-    /// </summary>
-    protected virtual bool IsSelectTargetSuccess() { return true; }
-    protected virtual void OnAbilityInit() { }
     protected virtual void OnAbilityStart() { }
+    /// <summary>
+    /// 技能释放
+    /// </summary>
     protected virtual void OnAbilitySpell() { }
+    /// <summary>
+    /// 技能结束
+    /// </summary>
     protected virtual void OnAbilityEnd() { }
     /// <summary>
     /// 引导类技能开启
@@ -239,4 +265,6 @@ public class Ability: AbilityBase,IAbility
     /// 引导类技能关闭
     /// </summary>
     protected virtual void OnChannelEnd() { }
+
+    #endregion
 }

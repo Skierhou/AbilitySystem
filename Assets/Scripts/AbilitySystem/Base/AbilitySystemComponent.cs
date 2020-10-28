@@ -1,109 +1,256 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using UnityEngine;
+using UnityEngine.Events;
 
-public interface IAbilitySystem
-{
-    AbilitySystemComponent GetAbilitySystemComponent();
-};
-
-public class AbilitySystemComponent : MonoBehaviour
+public class AbilitySystemComponent : MonoBehaviour, IAbilitySystem
 {
     /* posses ability list */
-    HashSet<Ability> abilities;
-
-    Dictionary<FAbilityTagContainer, Ability> abilitiesMap;
-    Dictionary<FAbilityTagContainer, AbilityBuff> buffsMap;
+    HashSet<AbilityBase> activityAbilities;
+    Dictionary<FAbilityTagContainer, AbilityBase> abilitiesMap;
+    Dictionary<FAbilityTagContainer, AbilityBuff> buffMap;
 
     /* current Tag */
     FAbilityTagCountContainer activationAbilityTagsContainer;
     FAbilityTagCountContainer blockAbilityTagsContainer;
 
-    List<Ability> needRemoveList;
+    /* Attribute */
+    public AttributeSet AttributeSet { get; protected set; }
+    public MovementComponent MovmentComponent { get; protected set; }
+
+    /* Event */
+    public Dictionary<FAbilityTagContainer, UnityAction<AbilitySystemComponent>> OnAbilityTriggerEventMap;
+
+    /* Debug */
+    [Header("Debug")]
+    public bool bShowActivityAbility;
+    public bool bShowBlockAbility;
+    public bool bShowPossessAbility;
+    public bool bShowAttribute;
 
     private void Awake()
     {
-        abilities = new HashSet<Ability>();
-        needRemoveList = new List<Ability>();
-        abilitiesMap = new Dictionary<FAbilityTagContainer, Ability>();
-        buffsMap = new Dictionary<FAbilityTagContainer, AbilityBuff>();
+        AttributeSet = new AttributeSet();
+        activityAbilities = new HashSet<AbilityBase>();
+        abilitiesMap = new Dictionary<FAbilityTagContainer, AbilityBase>();
+        buffMap = new Dictionary<FAbilityTagContainer, AbilityBuff>();
+        OnAbilityTriggerEventMap = new Dictionary<FAbilityTagContainer, UnityAction<AbilitySystemComponent>>();
+
+        MovmentComponent = GetComponent<MovementComponent>();
+
+        AttributeSet.AddAttribute(EAttributeType.AT_Health, 100);
+        AttributeSet.AddAttribute(EAttributeType.AT_Mana, 100);
     }
 
-    private void Update()
+    private void OnGUI()
     {
-        if (needRemoveList.Count > 0)
+        StringBuilder sb = new StringBuilder();
+        float height = 20;
+        if (bShowPossessAbility)
         {
-            Ability tempAbility = needRemoveList[0];
-            needRemoveList.RemoveAt(0);
-            abilities.Remove(tempAbility);
+            sb.Append("PossessAbility:");
+            foreach (var item in abilitiesMap.Keys)
+            {
+                sb.Append(item + "|");
+            }
+            GUI.color = Color.black;
+            GUI.Label(new Rect(20, height, 200, 50), sb.ToString());
+            height += 50;
+        }
+        if (bShowAttribute)
+        {
+            foreach (var item in AttributeSet.AttributeMap.Keys)
+            {
+                string str = item + "=" + AttributeSet.AttributeMap[item].BaseValue + "/" + AttributeSet.AttributeMap[item].CurrentValue;
+                GUI.Label(new Rect(20, height, 200, 20), str);
+                height += 20;
+            }
+        }
+        if (bShowActivityAbility)
+        {
+            sb.Clear();
+            sb.Append("ActivityTags:");
+            if (activationAbilityTagsContainer.abilityTagCountMap != null)
+            {
+                foreach (FAbilityTag tag in activationAbilityTagsContainer.abilityTagCountMap.Keys)
+                {
+                    if (activationAbilityTagsContainer.abilityTagCountMap[tag] > 0)
+                        sb.Append(tag + "|");
+                }
+            }
+            GUI.Label(new Rect(20, height, 200, 50), sb.ToString());
+            height += 50;
+        }
+        if (bShowBlockAbility)
+        {
+            sb.Clear();
+            sb.Append("BlockTags:");
+            if (blockAbilityTagsContainer.abilityTagCountMap != null)
+            {
+                foreach (FAbilityTag tag in blockAbilityTagsContainer.abilityTagCountMap.Keys)
+                {
+                    if (blockAbilityTagsContainer.abilityTagCountMap[tag] > 0)
+                        sb.Append(tag + "|");
+                }
+            }
+            GUI.Label(new Rect(20, height, 200, 50), sb.ToString());
+            height += 50;
         }
     }
 
-    /// <summary>
-    /// 获得能力
-    /// </summary>
-    public virtual void AcquireAbility(Ability inAbility) 
+    #region Ability
+    public AbilityBase TryGetAbility(FAbilityTagContainer inTag)
     {
-        if (!abilities.Contains(inAbility))
+        AbilityBase abilityBase;
+        if (!abilitiesMap.TryGetValue(inTag, out abilityBase) || abilityBase == null)
+        {
+            if (buffMap.TryGetValue(inTag, out AbilityBuff buff))
+                abilityBase = buff;
+        }
+        return abilityBase;
+    }
+    public void AcquireAbilityByTag(string inTag)
+    {
+        if (AbilityTagManager.Instance.GetTagContainer(inTag, out FAbilityTagContainer tag))
+        {
+            AcquireAbilityByTag(tag);
+        }
+    }
+    public void AcquireAbilityByTag(FAbilityTagContainer inTag)
+    {
+        if (!abilitiesMap.ContainsKey(inTag))
+        {
+            AbilityBase ability = AbilityManager.Instance.CreateAbility(inTag, this);
+            AcquireAbility(ability);
+        }
+    }
+    public void RemoveAbilityByTag(string inTag)
+    {
+        if (AbilityTagManager.Instance.GetTagContainer(inTag, out FAbilityTagContainer tag))
+        {
+            RemoveAbilityByTag(tag);
+        }
+    }
+    public void RemoveAbilityByTag(FAbilityTagContainer inTag)
+    {
+        if (abilitiesMap.TryGetValue(inTag, out AbilityBase ability))
+        {
+            RemoveAbility(ability);
+        }
+    }
+    public virtual void AcquireAbility(AbilityBase inAbility)
+    {
+        if (inAbility is null) return;
+        if (!abilitiesMap.ContainsKey(inAbility.abilityTags))
         {
             abilitiesMap.Add(inAbility.abilityTags, inAbility);
         }
     }
-    /// <summary>
-    /// 移除能力
-    /// </summary>
-    public virtual void RemoveAbility(Ability inAbility) 
+    public virtual void RemoveAbility(AbilityBase inAbility)
     {
+        if (activityAbilities.Contains(inAbility))
+            inAbility.CancelAbility();
         abilitiesMap.Remove(inAbility.abilityTags);
+        AbilityManager.Instance.DestroyAbility(inAbility);
     }
-
-    /// <summary>
-    /// 尝试触发一个能力
-    /// </summary>
-    public virtual bool TryActivateAbilityByTag(string inTag) 
+    public bool TryActivateAbilityByTag(string inTag)
     {
-        if (AbilityTagManager.Instance.GetTagContainer(inTag, out FAbilityTagContainer inAbilityTagContainer))
-        {
-            if (abilitiesMap.TryGetValue(inAbilityTagContainer, out Ability ability))
-                return TryActivateAbility(ability);
-        }
+        if (AbilityTagManager.Instance.GetTagContainer(inTag, out FAbilityTagContainer tagContainer))
+            return TryActivateAbilityByTag(tagContainer);
         return false;
     }
-    public virtual bool TryActivateAbility(Ability inAbility) 
+    public bool TryActivateAbilityByTag(FAbilityTagContainer inTag)
+    {
+        if (abilitiesMap.TryGetValue(inTag, out AbilityBase ability))
+            return TryActivateAbility(ability);
+        return false;
+    }
+    public virtual bool TryActivateAbility(AbilityBase inAbility)
     {
         if (CanActivateAbility(inAbility))
         {
             if (inAbility.TryActivateAbility())
             {
-                // 移除cancel列表的技能
-                CancelAbilityByTags(inAbility);
-
-                abilities.Add(inAbility);
                 return true;
             }
         }
         return false;
     }
-
-    public virtual bool TryCancelAbility(FAbilityTagContainer inTagContainer)
+    public virtual bool TryCancelAbilityByTag(FAbilityTagContainer inTagContainer)
     {
-        if (abilitiesMap.TryGetValue(inTagContainer, out Ability ability))
+        if (abilitiesMap.TryGetValue(inTagContainer, out AbilityBase ability)
+            && activityAbilities.Contains(ability))
         {
             ability.CancelAbility();
-            return true;
         }
         return false;
     }
-
     public virtual bool CanActivateAbility(AbilityBase inAbility)
     {
-        return inAbility is object && (!blockAbilityTagsContainer.HasBlockMatchingTags(inAbility.abilityTags) && CheckSourceTags(inAbility));
+        return inAbility is object && (inAbility.IsImmediately || (!blockAbilityTagsContainer.HasBlockMatchingTags(inAbility.abilityTags) && CheckSourceTags(inAbility)));
     }
-    /// <summary>
-    /// 移除cancel列表的技能
-    /// </summary>
-    public virtual void CancelAbilityByTags(AbilityBase inAbility)
+
+    public virtual void OnActivateAbilitySuccess(AbilityBase inAbility)
+    {
+        // 移除cancel列表的技能
+        CancelAbilityByOther(inAbility);
+        // 触发该Tag对应事件
+        TriggerEventByAbility(inAbility);
+        // 添加至激活列表
+        activityAbilities.Add(inAbility);
+    }
+    public virtual void OnEndAbility(AbilityBase inAbility)
+    {
+        if (inAbility is object)
+        {
+            activityAbilities.Remove(inAbility);
+            //needRemoveList.Add(inAbility);
+        }
+    }
+    public virtual void RegisterEvent(string inTag, UnityAction<AbilitySystemComponent> inAction)
+    {
+        RegisterEvent(AbilityTagManager.Instance.GetTagContainer(inTag), inAction);
+    }
+    public virtual void RegisterEvent(FAbilityTagContainer inTag, UnityAction<AbilitySystemComponent> inAction)
+    {
+        if (OnAbilityTriggerEventMap.ContainsKey(inTag))
+        {
+            OnAbilityTriggerEventMap[inTag] += inAction;
+        }
+        else
+        {
+            OnAbilityTriggerEventMap.Add(inTag, inAction);
+        }
+    }
+    public virtual void RemoveEvent(string inTag, UnityAction<AbilitySystemComponent> inAction)
+    {
+        RemoveEvent(AbilityTagManager.Instance.GetTagContainer(inTag), inAction);
+    }
+    public virtual void RemoveEvent(FAbilityTagContainer inTag, UnityAction<AbilitySystemComponent> inAction)
+    {
+        if (OnAbilityTriggerEventMap.ContainsKey(inTag))
+        {
+            OnAbilityTriggerEventMap[inTag] -= inAction;
+        }
+    }
+    public virtual void TriggerEventByAbility(AbilityBase inAbility)
+    {
+        if (inAbility.activationOwnedTags == null || inAbility.activationOwnedTags.Count == 0 || OnAbilityTriggerEventMap.Count == 0)
+            return;
+
+        foreach (FAbilityTagContainer tagContainer in inAbility.activationOwnedTags)
+        {
+            foreach (FAbilityTagContainer eventContainer in OnAbilityTriggerEventMap.Keys)
+            {
+                if (tagContainer.HasAll(eventContainer))
+                    OnAbilityTriggerEventMap[eventContainer]?.Invoke(null);
+            }
+        }
+    }
+    public virtual void CancelAbilityByOther(AbilityBase inAbility)
     {
         if (inAbility.cancelAbilitiesWithTags == null || inAbility.cancelAbilitiesWithTags.Count == 0)
             return;
@@ -112,7 +259,7 @@ public class AbilitySystemComponent : MonoBehaviour
         {
             if (activationAbilityTagsContainer.HasAnyMatchingTags(tagContainer))
             {
-                foreach (Ability ability in abilities)
+                foreach (AbilityBase ability in activityAbilities)
                 {
                     if (ability is object && ability.abilityTags.HasAll(tagContainer))
                     {
@@ -122,51 +269,124 @@ public class AbilitySystemComponent : MonoBehaviour
             }
         }
     }
-    /// <summary>
-    /// 检测当前作用源是否符合条件
-    /// </summary>
-    public virtual bool CheckSourceTags(AbilityBase inAbility)
-    {
-        return !activationAbilityTagsContainer.HasBlockMatchingTags(inAbility.sourceBlockedTags) && activationAbilityTagsContainer.HasAnyMatchingTags(inAbility.sourceRequiredTags);
-    }
+    #endregion
 
-    /// <summary>
-    /// 检测当前作用目标是否符合条件
-    /// </summary>
-    public virtual bool CheckTargetTags(AbilityBase inAbility)
+    public void WaitingSelectTargetEvent(ETargetType targetType,KeyCode selectKeyCode, KeyCode unSelectKeyCode, Action<bool, Vector3, AbilitySystemComponent> onSelectTarget)
     {
-        return activationAbilityTagsContainer.HasAnyMatchingTags(inAbility.targetRequiredTags) && !activationAbilityTagsContainer.HasBlockMatchingTags(inAbility.targetBlockedTags);
+        StartCoroutine(Cor_WaitingSelectTarget(targetType, selectKeyCode, unSelectKeyCode, onSelectTarget));
     }
-    public virtual void AddBuff(AbilityBuff inBuff)
+    IEnumerator Cor_WaitingSelectTarget(ETargetType targetType, KeyCode selectKeyCode, KeyCode unSelectKeyCode, Action<bool, Vector3, AbilitySystemComponent> onSelectTarget)
     {
-        buffsMap.Add(inBuff.abilityTags, inBuff);
-    }
-    public virtual void RemoveBuff(AbilityBuff inBuff)
-    {
-        buffsMap.Remove(inBuff.abilityTags);
-    }
-    public virtual void TryActivateBuffByTag(string inTag,int inLevel = 1,int inStackDelta = 1)
-    {
-        if (AbilityTagManager.Instance.GetTagContainer(inTag, out FAbilityTagContainer abilityTagContainer))
+        if (selectKeyCode == KeyCode.None)
+            selectKeyCode = KeyCode.Mouse0;    
+        if (unSelectKeyCode == KeyCode.None)
+            unSelectKeyCode = KeyCode.Mouse1;
+
+        bool bSelect = false;
+        while (!bSelect)
         {
-            if (buffsMap.TryGetValue(abilityTagContainer, out AbilityBuff buff))
+            while (!Input.GetKeyDown(selectKeyCode) && !Input.GetKeyDown(unSelectKeyCode))
+                yield return null;
+
+            if (Input.GetKeyDown(selectKeyCode))
             {
-                buff.UpdateLevelAndStack(inLevel, inStackDelta);
+                if (targetType == ETargetType.ETT_Target)
+                {
+                    // 射线检测
+                    if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hitInfo) && hitInfo.collider != null)
+                    {
+                        AbilitySystemComponent target = hitInfo.collider.GetComponent<AbilitySystemComponent>();
+                        if (target != null)
+                        {
+                            bSelect = true;
+                            onSelectTarget?.Invoke(true, target.transform.position, target);
+                        }
+                    }
+                }
+                else
+                {
+                    // 鼠标位置
+                    if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hitInfo) && hitInfo.collider != null)
+                    {
+                        bSelect = true;
+                        onSelectTarget?.Invoke(true, hitInfo.point, null);
+                    }
+                    else
+                    {
+                        bSelect = true;
+                        onSelectTarget?.Invoke(true, transform.forward, null);
+                    }
+                }
             }
             else
             {
-                if (AbilityManager.Instance.GetBuffData(abilityTagContainer, out FAbilityBuffData data))
-                {
-                    AbilityBuff tempBuff = AbilityManager.Instance.CreateAblityBuff(abilityTagContainer);
-                    tempBuff.Init(this,data);
-                    tempBuff.UpdateLevelAndStack(inLevel, inStackDelta);
-                    tempBuff.ActivateBuff();
-                }
+                bSelect = true;
+                onSelectTarget?.Invoke(false, Vector3.zero, null);
             }
+            yield return null;
         }
+    }
+
+
+    #region Buff
+    public bool TryActivateBuffByTag(string inTag,int inLevel = 0,int inStackDelta = 1,bool bForceActivate = false)
+    {
+        if (AbilityTagManager.Instance.GetTagContainer(inTag, out FAbilityTagContainer abilityTagContainer))
+        {
+            return TryActivateBuffByTag(abilityTagContainer, inLevel, inStackDelta, bForceActivate);
+        }
+        return false;
+    }
+    public bool TryActivateBuffByTag(FAbilityTagContainer inTag, int inLevel = 0, int inStackDelta = 1, bool bForceActivate = false)
+    {
+        if (buffMap.TryGetValue(inTag, out AbilityBuff buff))
+        {
+            return TryActivateBuff(buff, inLevel, inStackDelta);
+        }
+        else
+        {
+            AbilityBuff tempBuff = AbilityManager.Instance.CreateAbility(inTag, this) as AbilityBuff;
+            return TryActivateBuff(tempBuff, inLevel, inStackDelta, bForceActivate);
+        }
+    }
+    public virtual bool TryActivateBuff(AbilityBuff inBuff, int inLevel = 0, int inStackDelta = 1, bool bForceActivate = false)
+    {
+        if (inBuff == null || (!bForceActivate && !CanActivateAbility(inBuff))) return false;
+        if (buffMap.ContainsKey(inBuff.abilityTags))
+        {
+            if (activityAbilities.Contains(inBuff))
+            {
+                inBuff.UpdateLevelAndStack(inLevel, inStackDelta);
+                return true;
+            }
+            else if (inBuff.TryActivateAbility())
+            {
+                inBuff.Stack = inStackDelta;
+                activityAbilities.Add(inBuff);
+                return true;
+            }
+            return false;
+        }
+        else
+        {
+            buffMap.Add(inBuff.abilityTags, inBuff);
+            return TryActivateBuff(inBuff, inLevel, inStackDelta);
+        }
+    }
+    #endregion
+
+    #region Other Check
+    public bool CheckSourceTags(AbilityBase inAbility)
+    {
+        return !activationAbilityTagsContainer.HasBlockMatchingTags(inAbility.sourceBlockedTags) && activationAbilityTagsContainer.HasAnyMatchingTags(inAbility.sourceRequiredTags);
+    }
+    public bool CheckTargetTags(AbilityBase inAbility)
+    {
+        return activationAbilityTagsContainer.HasAnyMatchingTags(inAbility.targetRequiredTags) && !activationAbilityTagsContainer.HasBlockMatchingTags(inAbility.targetBlockedTags);
     }
     public void AddBlockTags(List<FAbilityTagContainer> inTags)
     {
+        if (inTags == null) return;
         foreach (FAbilityTagContainer tag in inTags)
         {
             blockAbilityTagsContainer.AddTags(tag);
@@ -174,6 +394,7 @@ public class AbilitySystemComponent : MonoBehaviour
     }
     public void RemoveBlockTags(List<FAbilityTagContainer> inTags)
     {
+        if (inTags == null) return;
         foreach (FAbilityTagContainer tag in inTags)
         {
             blockAbilityTagsContainer.RemoveTags(tag);
@@ -185,6 +406,7 @@ public class AbilitySystemComponent : MonoBehaviour
     }
     public void AddActivateTags(List<FAbilityTagContainer> inTags)
     {
+        if (inTags == null) return;
         foreach (FAbilityTagContainer tag in inTags)
         {
             activationAbilityTagsContainer.AddTags(tag);
@@ -196,16 +418,11 @@ public class AbilitySystemComponent : MonoBehaviour
     }
     public void RemoveActivateTags(List<FAbilityTagContainer> inTags)
     {
+        if (inTags == null) return;
         foreach (FAbilityTagContainer tag in inTags)
         {
             activationAbilityTagsContainer.RemoveTags(tag);
         }
     }
-    public virtual void OnEndAbility(Ability inAbility)
-    {
-        if (inAbility is object)
-        {
-            needRemoveList.Add(inAbility);
-        }
-    }
+    #endregion
 }

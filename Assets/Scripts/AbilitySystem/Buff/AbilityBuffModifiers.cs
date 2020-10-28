@@ -3,26 +3,37 @@ using UnityEngine;
 
 public class AbilityBuffModifiers
 {
-    public AttributeSet attributeSet;
     public EAttributeType attributeType;
     public EBuffModifierOption modifierOption;
     public EBuffModifierType modifierType;
     public List<float> attributeMagnitudeList;
+    public AbilitySystemComponent abilitySystem;
+
+    public AbilityBuffModifiers() { }
+    public AbilityBuffModifiers(AbilitySystemComponent abilitySystem, Editor_FModifierData inData)
+    {
+        this.abilitySystem = abilitySystem;
+        attributeType = inData.attributeType;
+        modifierOption = inData.modifierOption;
+        modifierType = inData.modifierType;
+        attributeMagnitudeList = inData.attributeMagnitudeList;
+    }
 
     public virtual bool CanApplyModifier(int level = 0)
     {
-        if (attributeSet.GetAttributeData(attributeType, out FAttributeData data)
-                && attributeMagnitudeList != null
-                && attributeMagnitudeList.Count > level)
+        if (attributeMagnitudeList != null && attributeMagnitudeList.Count <= level)
+            level = attributeMagnitudeList.Count - 1;
+
+        if (abilitySystem.AttributeSet.GetAttributeData(attributeType, out FAttributeData data) && level >= 0)
         {
             switch (modifierOption)
             {
                 case EBuffModifierOption.EBMO_Add:
-                    return data.BaseValue - attributeMagnitudeList[level] >= 0;
+                    return data.CurrentValue + attributeMagnitudeList[level] >= 0;
                 case EBuffModifierOption.EBMO_Mul:
-                    return data.BaseValue * attributeMagnitudeList[level] >= 0;
+                    return data.CurrentValue * attributeMagnitudeList[level] >= 0;
                 case EBuffModifierOption.EBMO_Divide:
-                    return data.BaseValue / attributeMagnitudeList[level] >= 0;
+                    return data.CurrentValue / attributeMagnitudeList[level] >= 0;
                 case EBuffModifierOption.EBMO_Override:
                     return attributeMagnitudeList[level] >= 0;
             }
@@ -32,7 +43,7 @@ public class AbilityBuffModifiers
 
     public virtual void ApplyModifier(int level = 0)
     {
-        if (attributeSet.GetAttributeData(attributeType, out FAttributeData data)
+        if (abilitySystem.AttributeSet.GetAttributeData(attributeType, out FAttributeData data)
             && attributeMagnitudeList != null
             && attributeMagnitudeList.Count > level)
         {

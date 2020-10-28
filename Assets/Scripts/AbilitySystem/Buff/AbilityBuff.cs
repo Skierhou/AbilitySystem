@@ -3,75 +3,134 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct FAbilityBuffData
+public class AbilityBuff : AbilityBase, IAbilityBuff
 {
-    public List<AbilityBuffModifiers> modifiers;
-    public EDurationPolicy durationPolicy;
-
-    public float duration;
-    public float interval;
-
-    public int level;
-    public int stack;
-};
-
-public class AbilityBuff : AbilityBase
-{
-    protected AbilitySystemComponent abilitySystem;
-
+    #region 字段/属性
+    /// Data
     protected FAbilityBuffData buffData;
-
-    protected bool bActive;
-    // 临时
+    /// Temp
     Coroutine cor_Buff;
 
-    public int Level { get => buffData.level; private set => buffData.level = value; }
-    public int Stack { get => buffData.stack; private set => buffData.stack = value; }
-    protected virtual void OnBuffStart() { }
-    protected virtual void OnBuff() { }
-    protected virtual void OnBuffEnd() { }
+    public float Duration { get; protected set; }
 
-    public void Init(AbilitySystemComponent inAbilitySystemComp, FAbilityBuffData inBuffData)
+    public int Stack { get => buffData.stack; set => buffData.stack = value; }
+    #endregion
+
+    public override void InitAbility(AbilitySystemComponent abilitySystem, AbilityEditorData abilityEditorData)
     {
-        abilitySystem = inAbilitySystemComp;
-        buffData = inBuffData;
+        base.InitAbility(abilitySystem, abilityEditorData);
+        buffData.stack = 0;
+        buffData.maxStack = abilityEditorData.maxStack;
+        InitBuffData(abilityEditorData.Buff_Data, abilityEditorData.Buff_Modifiers, abilityEditorData.Buff_MotionModifiers);
     }
 
-    public void ActivateBuff()
+    #region IAbilityBuff接口实现
+    public virtual void InitBuffData(Editor_FAbilityBuffData inBuffData, List<Editor_FModifierData> inModifierData, List<Editor_FMotionModifierData> inMotionModifierData)
+    {
+        buffData.intervals = inBuffData.interval;
+        buffData.durations = inBuffData.duration;
+        buffData.durationPolicy = inBuffData.durationPolicy;
+        buffData.modifiers = new List<AbilityBuffModifiers>();
+        if (inModifierData != null)
+        {
+            foreach (Editor_FModifierData data in inModifierData)
+            {
+                AbilityBuffModifiers buffModifiers = new AbilityBuffModifiers(abilitySystem, data);
+                buffData.modifiers.Add(buffModifiers);
+            }
+        }
+        if (inMotionModifierData != null)
+        {
+            foreach (Editor_FMotionModifierData data in inMotionModifierData)
+            {
+                AbilityBuffMotionModifiers buffModifiers = new AbilityBuffMotionModifiers(abilitySystem, data);
+                buffData.modifiers.Add(buffModifiers);
+            }
+        }
+    }
+    public override bool TryActivateAbility(AbilitySystemComponent inTargetSystem = null)
+    {
+        if (CanActivateAbility())
+        {
+            ActivateBuff();
+            return true;
+        }
+        return false;
+    }
+    public override void EndAbility()
+    {
+        SetActive(false);
+        if (cor_Buff != null)
+        {
+            abilitySystem.StopCoroutine(cor_Buff);
+            cor_Buff = null;
+        }
+        abilitySystem.OnEndAbility(this);
+        OnBuffEnd();
+    }
+    public override bool CanActivateAbility()
+    {
+        return !IsActive;
+    }
+    public virtual bool CanApplyModifier()
+    {
+        foreach (AbilityBuffModifiers modifier in buffData.modifiers)
+        {
+            if (!modifier.CanApplyModifier(Level))
+                return false;
+        }
+        return true;
+    }
+    public virtual void UpdateLevelAndStack(int inLevel = 1, int inStackDelta = 1)
+    {
+        Level = Mathf.Min(Mathf.Max(Level, inLevel), MaxLevel);
+        Stack += inStackDelta;
+
+        if (Stack <= 0)
+        {
+            EndAbility();
+        }
+        else
+        {
+            if (inStackDelta > 0 && IsActive)
+            {
+                if (cor_Buff != null)
+                {
+                    abilitySystem.StopCoroutine(cor_Buff);
+                    cor_Buff = null;
+                }
+                OnBuffEnd();
+                ActivateBuff();
+            }
+        }
+    }
+    #endregion
+
+    #region Buff执行接口实现
+    protected virtual void ActivateBuff()
     {
         SetActive(true);
         OnBuffStart();
         switch (buffData.durationPolicy)
         {
             case EDurationPolicy.EDP_Instant:
-                ApplyModifiers();
-                EndBuff();
+                OnBuff();
+                EndAbility();
                 break;
             case EDurationPolicy.EDP_Infinite:
                 cor_Buff = abilitySystem.StartCoroutine(Buff(float.MaxValue));
                 break;
             case EDurationPolicy.EDP_HasDuration:
-                cor_Buff = abilitySystem.StartCoroutine(Buff(buffData.duration));
+                cor_Buff = abilitySystem.StartCoroutine(Buff(buffData.durations[Level]));
                 break;
         }
     }
-    public void EndBuff()
+    protected virtual void SetActive(bool inActive)
     {
-        SetActive(false);
-        abilitySystem.RemoveBuff(this);
-        if (cor_Buff != null)
-        {
-            abilitySystem.StopCoroutine(cor_Buff);
-            cor_Buff = null;
-        }
-        OnBuffEnd();
-    }
-    public void SetActive(bool inActive)
-    {
-        if (bActive == inActive) return;
+        if (IsActive == inActive) return;
 
-        bActive = inActive;
-        if (bActive)
+        IsActive = inActive;
+        if (IsActive)
         {
             abilitySystem.AddBlockTags(blockAbilitiesWithTags);
             abilitySystem.AddActivateTags(abilityTags);
@@ -84,11 +143,11 @@ public class AbilityBuff : AbilityBase
             abilitySystem.RemoveActivateTags(activationOwnedTags);
         }
     }
-
-    IEnumerator Buff(float inDuration)
+    protected virtual IEnumerator Buff(float inDuration)
     {
-        float timer = buffData.interval;
-        while (inDuration > 0.0f)
+        float timer = buffData.bActiveFirst ? 0.0f : buffData.intervals[Level];
+        Duration = inDuration;
+        while (Duration > 0.0f)
         {
             if (timer > 0.0f)
             {
@@ -96,57 +155,31 @@ public class AbilityBuff : AbilityBase
             }
             else
             {
-                timer = buffData.interval;
+                timer = buffData.intervals[Level];
                 OnBuff();
             }
-            inDuration -= Time.deltaTime;
+            Duration -= Time.deltaTime;
             yield return null;
         }
-        EndBuff();
+        EndAbility();
         cor_Buff = null;
     }
-
-    public bool IsAcitve()
+    protected virtual void OnBuffStart() { }
+    protected virtual void OnBuff() 
     {
-        return bActive;
+        ApplyModifiers();
     }
-
-    public bool CanApplyModifier()
+    protected virtual void OnBuffEnd() { }
+    protected virtual void ApplyModifiers()
     {
-        if (IsAcitve()) return false;
-
-        //foreach (AbilityBuffModifiers modifier in buffData.modifiers)
-        //{
-        //    if (!modifier.CanApplyModifier(buffData.level))
-        //        return false;
-        //}
-        return true;
-    }
-
-    private void ApplyModifiers()
-    {
-        //foreach (AbilityBuffModifiers modifier in buffData.modifiers)
-        //{
-        //    modifier.ApplyModifier(buffData.level);
-        //}
-    }
-
-    public void UpdateLevelAndStack(int inLevel = 1,int inStackDelta = 1)
-    {
-        Level = Mathf.Max(Level, inLevel);
-        Stack += inStackDelta;
-
-        if (Stack <= 0)
+        abilitySystem.CancelAbilityByOther(this);
+        if (buffData.modifiers != null)
         {
-            EndBuff();
-        }
-        else
-        {
-            if (inStackDelta > 0 && bActive)
+            foreach (AbilityBuffModifiers modifier in buffData.modifiers)
             {
-                EndBuff();
-                ActivateBuff();
+                modifier.ApplyModifier(Level);
             }
         }
     }
+    #endregion
 }

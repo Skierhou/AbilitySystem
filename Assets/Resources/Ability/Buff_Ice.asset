@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd23c2727acce649ad5a65b942bdc1e, type: 3}
+  m_Name: Buff_Ice
+  m_EditorClassIdentifier: 
+  AbilityScript: {fileID: 11500000, guid: fa2b5391fe53f244883a96ea1d30fba9, type: 3}
+  abilityType: 0
+  bImmediately: 0
+  bIsCancelable: 1
+  bIsBlockingOtherAbilities: 1
+  targetType: 0
+  castPoint: 0
+  totalTime: 0
+  maxLevel: 1
+  maxStack: 1
+  channelStartTime: 0
+  channelInterval: 0
+  channelEndTime: 0
+  abilityTags:
+  - Ice.Buff
+  cancelAbilitiesWithTags:
+  - Fire
+  blockAbilitiesWithTags:
+  - Fire
+  activationOwnedTags: []
+  sourceRequiredTags: []
+  sourceBlockedTags: []
+  targetRequiredTags: []
+  targetBlockedTags: []
+  Buff_CoolDown: {fileID: 0}
+  Buff_Cost: {fileID: 0}
+  Activity_Self_Buffs: []
+  Activity_Target_Buffs: []
+  Buff_Data:
+    durationPolicy: 2
+    duration:
+    - 3
+    interval:
+    - 1
+  Buff_Modifiers:
+  - attributeType: 1
+    modifierOption: 0
+    modifierType: 2
+    attributeMagnitudeList:
+    - 10
+  child_UnityDatas:
+  - {fileID: 549089065413250671, guid: 0add3bd6583bee04bbb9b823afbd8b2b, type: 3}
+  child_BaseDatas_Int: 
+  child_BaseDatas_Bool: 
+  child_BaseDatas_Float: []
+  child_BaseDatas_String: []

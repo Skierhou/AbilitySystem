@@ -71,6 +71,7 @@ public class Window_AbilityTagEditor : EditorWindow
 {
     //private const string ABILITYTAGCONFIGPATH = UnityEngine.Application.dataPath + "/Configs";
     private const string CONFIGNAME = "AbilityTag.ini";
+    private static string DirectoryPath = UnityEngine.Application.dataPath + "/Configs";
 
     public static Action<List<string>> OnValueChanged;
 
@@ -130,14 +131,12 @@ public class Window_AbilityTagEditor : EditorWindow
     static void ReadConfig()
     {
         nodeList.Clear();
-        string pp = UnityEngine.Application.dataPath + "/Configs";
-        if (!Directory.Exists(pp))
-        {
-            Directory.CreateDirectory(pp);
-        }
-        DirectoryInfo tDirectoryInfo = new DirectoryInfo(pp);
 
-        string path = pp + "/" + CONFIGNAME;
+        if (!Directory.Exists(DirectoryPath))
+        {
+            Directory.CreateDirectory(DirectoryPath);
+        }
+        string path = DirectoryPath + "/" + CONFIGNAME;
         if (!File.Exists(path))
             File.Create(path);
         if (File.Exists(path))

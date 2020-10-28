@@ -51,6 +51,12 @@ public class AbilityTagManager : Singleton<AbilityTagManager>
         return false;
     }
 
+    public FAbilityTagContainer GetTagContainer(string inTagName)
+    {
+        TagContainersMap.TryGetValue(inTagName,out FAbilityTagContainer tagContainer);
+        return tagContainer;
+    }
+
     void AddTag(string inStr)
     {
         if (string.IsNullOrEmpty(inStr) || string.IsNullOrWhiteSpace(inStr)) return;

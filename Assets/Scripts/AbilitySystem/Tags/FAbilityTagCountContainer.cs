@@ -1,26 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine.Events;
 
-public delegate void OnAbilityTagCountChanged(FAbilityTag abilityTag, int tagRef);
-
-public struct FAbilityTagDeletage
-{
-    public event OnAbilityTagCountChanged OnAbilityTagCountChangedEvent;
-};
 
 public struct FAbilityTagCountContainer
 {
-    private Dictionary<FAbilityTag, int> abilityTagCountMap;
-    private Dictionary<FAbilityTag, FAbilityTagDeletage> abilityTagEventMap;
+    public Dictionary<FAbilityTag, int> abilityTagCountMap;
+    private Dictionary<FAbilityTag, UnityAction<FAbilityTag, int>> abilityTagEventMap;
 
     public void AddTags(FAbilityTagContainer inAbilityTagContainer)
     {
         if (inAbilityTagContainer.IsEmpty()) return;
 
-        foreach (FAbilityTag abilityTag in inAbilityTagContainer.abilityTags)
-        {
-            AddTag(abilityTag);
-        }
+        //foreach (FAbilityTag abilityTag in inAbilityTagContainer.abilityTags)
+        //{
+        //    AddTag(abilityTag);
+        //}
+        AddTag(inAbilityTagContainer.abilityTags[inAbilityTagContainer.abilityTags.Count - 1]);
     }
     public void AddTag(FAbilityTag inAbilityTag,int inNum = 1)
     {
@@ -40,10 +36,11 @@ public struct FAbilityTagCountContainer
     {
         if (inAbilityTagContainer.IsEmpty()) return;
 
-        foreach (FAbilityTag abilityTag in inAbilityTagContainer.abilityTags)
-        {
-            AddTag(abilityTag, -1);
-        }
+        //foreach (FAbilityTag abilityTag in inAbilityTagContainer.abilityTags)
+        //{
+        //    AddTag(abilityTag, -1);
+        //}
+        AddTag(inAbilityTagContainer.abilityTags[inAbilityTagContainer.abilityTags.Count - 1], -1);
     }
     public void UpdateTagRef(FAbilityTag inAbilityTag,int inCountDelta)
     {
@@ -52,15 +49,15 @@ public struct FAbilityTagCountContainer
         else
             AddTag(inAbilityTag, inCountDelta);
     }
-    public void ResgiterAbilityEvent(FAbilityTag inAbilityTag, OnAbilityTagCountChanged inEvent)
+    public void ResgiterAbilityEvent(FAbilityTag inAbilityTag, UnityAction<FAbilityTag, int> inEvent)
     {
         if (!abilityTagEventMap.ContainsKey(inAbilityTag))
         {
-            abilityTagEventMap.Add(inAbilityTag, new FAbilityTagDeletage());
+            abilityTagEventMap.Add(inAbilityTag, inEvent);
         }
-        if (abilityTagEventMap.TryGetValue(inAbilityTag, out FAbilityTagDeletage abilityTagDeletage))
+        else
         {
-            abilityTagDeletage.OnAbilityTagCountChangedEvent += inEvent;
+            abilityTagEventMap[inAbilityTag] += inEvent;
         }
     }
     public bool HasAnyMatchingTags(List<FAbilityTagContainer> inOtherContainers)
@@ -79,9 +76,9 @@ public struct FAbilityTagCountContainer
 
         foreach (FAbilityTag abilityTag in inOtherContainer.abilityTags)
         {
-            if (!HasMatchingTag(abilityTag)) return false;
+            if (HasMatchingTag(abilityTag)) return true;
         }
-        return true;
+        return false;
     }
     public bool HasBlockMatchingTags(List<FAbilityTagContainer> inOtherContainers)
     {
@@ -100,9 +97,9 @@ public struct FAbilityTagCountContainer
 
         foreach (FAbilityTag abilityTag in inOtherContainer.abilityTags)
         {
-            if (!HasMatchingTag(abilityTag)) return false;
+            if (HasMatchingTag(abilityTag)) return true;
         }
-        return true;
+        return false;
     }
     public bool HasMatchingTag(FAbilityTag abilityTag)
     {

@@ -91,11 +91,11 @@ public struct FAbilityTagContainer
         string str = "";
         if (abilityTags != null && abilityTags.Count > 0)
         {
-            for (int i = 0; i < abilityTags.Count - 1; i++)
-            {
-                str += abilityTags[i].TagName + "/n";
-            }
-            str += abilityTags[abilityTags.Count - 1].TagName;
+            //for (int i = 0; i < abilityTags.Count - 1; i++)
+            //{
+            //    str += abilityTags[i].TagName + "|";
+            //}
+            str = abilityTags[abilityTags.Count - 1].TagName;
         }
         return str;
     }

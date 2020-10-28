@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-class RootMotionClip
+public class RootMotionClip
 {
     public EMotionType motionType;
     public EMotionType rotateType;
@@ -20,7 +20,7 @@ class RootMotionClip
     {
         return animator == null ? Vector3.zero : animator.velocity;
     }
-    public virtual Vector3 GetRotateRate()
+    public virtual Vector3 GetAngularVelocity()
     {
         return animator == null ? Vector3.zero : animator.angularVelocity;
     }

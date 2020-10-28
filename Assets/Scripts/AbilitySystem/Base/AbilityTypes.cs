@@ -1,13 +1,16 @@
-﻿
+﻿using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Events;
+
 /// <summary>
 /// 技能类型
 /// </summary>
 public enum EAbilityType
 {
-    EAT_PassiveAblity,      //被动
-    EAT_GeneralAbility,     //普通
-    EAT_ChannelAbility,     //引导
-    EAT_ToggleAbility,      //开关
+    EAT_PassiveAblity = 0,      //被动
+    EAT_GeneralAbility = 1,     //普通
+    EAT_ChannelAbility = 2,     //引导
+    EAT_ToggleAbility = 4,      //开关
 };
 /// <summary>
 /// 目标类型
@@ -57,3 +60,45 @@ public enum EBuffModifierType
     EBMT_Extra,
     EBMT_Extra_AcceptMul,
 }
+
+public enum EOperationKey
+{
+    EOK_Down,
+    EOK_Up,
+};
+
+public struct FAbilityData
+{
+    // ability
+    public EAbilityType abilityType;
+
+    // 选择方式
+    public ETargetType targetType;
+    public KeyCode selectKeyCode;
+    public KeyCode unSelectKeyCode;
+    public ESelectTarget selectTargetType;
+
+    // 施法范围
+    public float spellRange;
+    // OnSpell回调时间点
+    public float castPoint;
+    public float totalTime;
+
+    public float channelStartTime;
+    public float channelInterval;
+    public float channelEndTime;
+};
+
+public struct FAbilityBuffData
+{
+    public List<AbilityBuffModifiers> modifiers;
+    public EDurationPolicy durationPolicy;
+
+    public List<float> durations;
+    public List<float> intervals;
+
+    public int maxStack;
+    public int stack;
+
+    public bool bActiveFirst;
+};

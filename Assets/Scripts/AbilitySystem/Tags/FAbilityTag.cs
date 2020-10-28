@@ -47,4 +47,8 @@ public struct FAbilityTag
     {
         return base.GetHashCode();
     }
+    public override string ToString()
+    {
+        return TagName;
+    }
 }
