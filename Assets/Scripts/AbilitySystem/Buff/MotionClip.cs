@@ -82,7 +82,7 @@ public class MotionClip
         this.startRot = startRot;
         this.duration = duration;
         this.rotateCurve = rotateCurve;
-
+        this.torque = GetTorque(rotateAxis, rotateAngle);
         endRot = Quaternion.Euler(startRot.eulerAngles + GetTorque(rotateAxis, rotateAngle));
     }
 
@@ -142,29 +142,12 @@ public class MotionClip
                 v1 = Quaternion.Lerp(startRot, endRot, (Time.time - startTime) / duration).eulerAngles;
                 v2 = Quaternion.Lerp(startRot, endRot, (Time.time - startTime + inDeltaTime) / duration).eulerAngles;
             }
-            angularVelocity = (CheckEulerAngles(v2) - CheckEulerAngles(v1)) / inDeltaTime;
+            angularVelocity = (MathEx.ClampVector360(v2) - MathEx.ClampVector360(v1)) / inDeltaTime;
         }
         else
         {
             angularVelocity = torque;
         }
-    }
-
-    Vector3 CheckEulerAngles(Vector3 source)
-    {
-        while (source.x < 0.0f)
-            source.x += 360.0f;
-        while (source.y < 0.0f)
-            source.y += 360.0f;
-        while (source.z < 0.0f)
-            source.z += 360.0f;
-        while (source.x > 360.0f)
-            source.x -= 360.0f;
-        while (source.y > 360.0f)
-            source.y -= 360.0f;
-        while (source.z > 360.0f)
-            source.z -= 360.0f;
-        return source;
     }
     Vector3 GetDirection(EDirectType directType)
     {

@@ -18,6 +18,7 @@ public enum EEditor_AbilityTagType
     EATT_ActivitySelfBuffTags,
     EATT_ActivityTargetBuffTags,
     EATT_PassiveAbilityListenerTags,
+    EATT_PassiveAbilityTriggerTags,
     EATT_Other,
 };
 
@@ -139,15 +140,18 @@ public class Inspector_AbilityEditorData : Editor
                 EditorGUILayout.PropertyField(channelInterval);
                 EditorGUILayout.PropertyField(channelEndTime);
             }
-            if (abilityType.intValue != (int)EAbilityType.EAT_PassiveAblity)
+            if (abilityType.intValue == (int)EAbilityType.EAT_ToggleAbility
+                || abilityType.intValue == (int)EAbilityType.EAT_PassiveAblity)
+            {
+                if(abilityType.intValue == (int)EAbilityType.EAT_PassiveAblity)
+                    CreateAbilityTag(ability.passiveAbilityListenerTags, EEditor_AbilityTagType.EATT_PassiveAbilityListenerTags, "PassiveListenerTags");
+                CreateAbilityTag(ability.passiveAbilityTriggerTags, EEditor_AbilityTagType.EATT_PassiveAbilityTriggerTags, "TriggerTags");
+            }
+            else
             {
                 EditorGUILayout.PropertyField(targetType);
                 EditorGUILayout.PropertyField(castPoint);
                 EditorGUILayout.PropertyField(totalTime);
-            }
-            else
-            {
-                CreateAbilityTag(ability.passiveAbilityListenerTags, EEditor_AbilityTagType.EATT_PassiveAbilityListenerTags, "PassiveListenerTags");
             }
 
             // buff

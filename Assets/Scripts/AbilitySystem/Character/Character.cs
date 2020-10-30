@@ -41,7 +41,6 @@ public class Character : MonoBehaviour
     {
         AbilitySystemComponent = GetComponent<AbilitySystemComponent>();
         MovementComponent = GetComponent<MovementComponent>();
-        OnPossess(new Controller());
     }
     #endregion
 }

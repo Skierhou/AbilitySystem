@@ -269,7 +269,8 @@ public class Projectile : MonoBehaviour,IProjectile
         float angularSpeed = Mathf.Lerp(projectileData.angularSpeed,projectileData.maxAngularSpeed, projectileData.speed / projectileData.maxSpeed);
 
         m_Rigidbody.velocity = projectileData.speed * transform.forward.normalized;
-        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(projectileData.Target.position - transform.position), inDeltaTime * angularSpeed);
+        float rate = angularSpeed / (MathEx.ClampVector360(Quaternion.LookRotation(projectileData.Target.position - transform.position).eulerAngles) - MathEx.ClampVector360(transform.rotation.eulerAngles)).magnitude;
+        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(projectileData.Target.position - transform.position), rate * inDeltaTime);
     }
     /// <summary>
     /// 按曲线差值

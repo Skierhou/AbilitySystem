@@ -3879,8 +3879,9 @@ GameObject:
   m_Component:
   - component: {fileID: 5709500268189311747}
   - component: {fileID: 4096603671566187673}
-  - component: {fileID: 734899271465563173}
-  - component: {fileID: 2540771851413028048}
+  - component: {fileID: 4600043792409377449}
+  - component: {fileID: 89585448593711445}
+  - component: {fileID: 1664619121100019082}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -3921,7 +3922,7 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1, z: 0}
---- !u!114 &734899271465563173
+--- !u!114 &4600043792409377449
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3930,11 +3931,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 849025875059385468}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 14c7648c336ee03428b6886faf8bead3, type: 3}
+  m_Script: {fileID: 11500000, guid: 88ca832d6b02cb646ad7a1b54509e1d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hp_slider: {fileID: 0}
---- !u!114 &2540771851413028048
+  physicsType: 0
+--- !u!114 &89585448593711445
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3944,6 +3945,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62e7c09504b4b134fb3b609ab6087e0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bShowActivityAbility: 1
+  bShowBlockAbility: 1
+  bShowPossessAbility: 1
+  bShowAttribute: 1
+--- !u!114 &1664619121100019082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 849025875059385468}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fa9c5f825b2dc740889bea1fec79961, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &2393094424122545147
