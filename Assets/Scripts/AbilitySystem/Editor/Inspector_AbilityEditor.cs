@@ -369,6 +369,9 @@ public class Inspector_AbilityEditorData : Editor
             case EEditor_AbilityTagType.EATT_PassiveAbilityListenerTags:
                 ability.passiveAbilityListenerTags = new List<string>(list);
                 break;
+            case EEditor_AbilityTagType.EATT_PassiveAbilityTriggerTags:
+                ability.passiveAbilityTriggerTags = new List<string>(list);
+                break;
             default:
                 break;
         }

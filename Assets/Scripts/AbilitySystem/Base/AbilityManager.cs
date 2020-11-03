@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -12,7 +9,8 @@ public class AbilityManager:Singleton<AbilityManager>
     private List<AbilityEditorData> AbilityDatas;
     Dictionary<FAbilityTagContainer, AbilityEditorData> m_AbilityMaps;
 
-    Dictionary<FAbilityTagContainer, UnityAction<object, object, object>> eventMaps;
+    public UnityAction<FAbilityTagContainer> onTriggerEvent;
+    Dictionary<FAbilityTagContainer, UnityAction<FAbilityTagContainer, object, object, object>> eventMaps;
 
     public override void Initialize()
     {
@@ -31,7 +29,7 @@ public class AbilityManager:Singleton<AbilityManager>
                 m_AbilityMaps.Add(AbilityTagManager.Instance.GetTagContainer(data.abilityTags[0]), data);
             }
         }
-        eventMaps = new Dictionary<FAbilityTagContainer, UnityAction<object, object, object>>();
+        eventMaps = new Dictionary<FAbilityTagContainer, UnityAction<FAbilityTagContainer,object, object, object>>();
     }
 
     public AbilityBase CreateAbility(FAbilityTagContainer inTag,AbilitySystemComponent systemComponent)
@@ -59,18 +57,26 @@ public class AbilityManager:Singleton<AbilityManager>
         inAbility.DestroyAbility();
     }
 
-    public void TriggerEvent(FAbilityTagContainer tagContainer, object param1, object param2, object param3)
+    #region Event
+    public void TriggerEvent(FAbilityTagContainer tagContainer, object param1 = null, object param2 = null, object param3 = null)
     {
-        if (eventMaps.TryGetValue(tagContainer, out UnityAction<object, object, object> action))
+        if (eventMaps.TryGetValue(tagContainer, out UnityAction<FAbilityTagContainer, object, object, object> action))
         {
-            action?.Invoke(param1, param2, param3);
+            onTriggerEvent?.Invoke(tagContainer);
+            action?.Invoke(tagContainer, param1, param2, param3);
         }
     }
-    public void RegisterEvent(FAbilityTagContainer tagContainer, UnityAction<object, object, object> register)
+    public void RegisterEvent(FAbilityTagContainer tagContainer, UnityAction<FAbilityTagContainer, object, object, object> register)
     {
         if (eventMaps.ContainsKey(tagContainer))
             eventMaps[tagContainer] += register;
         else
             eventMaps.Add(tagContainer, register);
     }
+    public void RemoveEvent(FAbilityTagContainer tagContainer, UnityAction<FAbilityTagContainer, object, object, object> register)
+    {
+        if (eventMaps.ContainsKey(tagContainer))
+            eventMaps[tagContainer] -= register;
+    }
+    #endregion
 }

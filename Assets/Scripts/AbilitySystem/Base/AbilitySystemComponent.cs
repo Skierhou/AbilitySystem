@@ -207,7 +207,8 @@ public class AbilitySystemComponent : MonoBehaviour, IAbilitySystem
         if (inAbility is object)
         {
             activityAbilities.Remove(inAbility);
-            //needRemoveList.Add(inAbility);
+            if (inAbility is AbilityBuff)
+                buffMap.Remove(inAbility.abilityTags);
         }
     }
     public virtual void RegisterEvent(string inTag, UnityAction<AbilitySystemComponent> inAction)
@@ -236,17 +237,22 @@ public class AbilitySystemComponent : MonoBehaviour, IAbilitySystem
             OnAbilityTriggerEventMap[inTag] -= inAction;
         }
     }
+    public virtual void TriggerEventByTags(FAbilityTagContainer inTag)
+    {
+        foreach (FAbilityTagContainer eventContainer in OnAbilityTriggerEventMap.Keys)
+        {
+            if (inTag.HasAll(eventContainer))
+                OnAbilityTriggerEventMap[eventContainer]?.Invoke(null);
+        }
+    }
     public virtual void TriggerEventByAbility(AbilityBase inAbility)
     {
-        if (inAbility.activationOwnedTags == null || inAbility.activationOwnedTags.Count == 0 || OnAbilityTriggerEventMap.Count == 0)
-            return;
-
-        foreach (FAbilityTagContainer tagContainer in inAbility.activationOwnedTags)
+        TriggerEventByTags(inAbility.abilityTags);
+        if (inAbility.activationOwnedTags != null)
         {
-            foreach (FAbilityTagContainer eventContainer in OnAbilityTriggerEventMap.Keys)
+            foreach (FAbilityTagContainer tagContainer in inAbility.activationOwnedTags)
             {
-                if (tagContainer.HasAll(eventContainer))
-                    OnAbilityTriggerEventMap[eventContainer]?.Invoke(null);
+                TriggerEventByTags(tagContainer);
             }
         }
     }
@@ -339,6 +345,9 @@ public class AbilitySystemComponent : MonoBehaviour, IAbilitySystem
     }
     public bool TryActivateBuffByTag(FAbilityTagContainer inTag, int inLevel = 0, int inStackDelta = 1, bool bForceActivate = false)
     {
+        if (blockAbilityTagsContainer.HasBlockMatchingTags(inTag))
+            return false;
+
         if (buffMap.TryGetValue(inTag, out AbilityBuff buff))
         {
             return TryActivateBuff(buff, inLevel, inStackDelta);

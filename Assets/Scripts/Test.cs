@@ -19,10 +19,10 @@ public class Test : MonoBehaviour
         //projectile.InitProjByCurve(transform.position, target.position, data1,data2);
 
         //projectile.InitProjByDirection(transform.position, target.position - transform.position, 20, 30);
-        //projectile.UseGravity = true;
-        //projectile.InitProjByFixedPoint(transform.position, target.position, 10, 15);
-        projectile.InitProjByTarget(transform.position, target, 0, 20, 5, 0, 180);
-        //projectile.InitLookAt(true);
+        projectile.GravityScale = 1.0f;
+        projectile.InitProjByFixedPoint(transform.position, target.position, 10, 15);
+        //projectile.InitProjByTarget(transform.position, target, 0, 20, 5, 0, 180);
+        projectile.InitLookAt(true);
         projectile.Launch();
     }
 

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UIElements;
@@ -87,8 +88,8 @@ public struct FProjectileData
 
     /* 影响实际位移 */
     public Vector3 velocity;
+    public Vector3 gravity;
 
-    /* 重力比例 */
     public float gravityScale;
 
     /* 速度 */
@@ -123,6 +124,7 @@ public class Projectile : MonoBehaviour,IProjectile
     /* Base */
     public float LifeSpan { set; get; } = 1000;
     public float GravityScale { get => projectileData.gravityScale; set => projectileData.gravityScale = value; }
+    public float CurrGravityScale { protected set; get; }
     public bool IsFly { get; protected set; }
 
     public UnityAction OnProjectile_Landed;
@@ -131,7 +133,7 @@ public class Projectile : MonoBehaviour,IProjectile
     protected FProjectileData projectileData;
 
     /* Component */
-    private Rigidbody m_Rigidbody;
+    protected Rigidbody m_Rigidbody;
 
     #region Interface
     public virtual void InitProjByDirection(Vector3 inStartLoc, Vector3 inDir, float inSpeed
@@ -157,7 +159,6 @@ public class Projectile : MonoBehaviour,IProjectile
         transform.position = inStartLoc;
         projectileData.StartLoc = inStartLoc;
         projectileData.accelerate = inAccelerate;
-        projectileData.IsLookTargetLoc = true;
         projectileData.TargetLoc = inEndLoc;
         projectileData.maxSpeed = float.MaxValue;
         projectileData.speed = inSpeed;
@@ -176,6 +177,9 @@ public class Projectile : MonoBehaviour,IProjectile
 
         VX = TempDist.normalized * Vox;
         projectileData.velocity = VX + VY;
+
+        projectileData.gravity = VY;
+        projectileData.relativeForward = TempDist.normalized;
     }
    
     public virtual void InitProjByTarget(Vector3 inStartLoc, Transform inTarget, float inSpeed, float inMaxSpeed, float inAccel
@@ -242,17 +246,18 @@ public class Projectile : MonoBehaviour,IProjectile
     {
         return -Physics.gravity.y * GravityScale;
     }
+
     /// <summary>
     /// 普通直线/曲线模式
     /// </summary>
     protected virtual void Fly_Normal(float inDeltaTime)
     {
-        projectileData.velocity = m_Rigidbody.velocity;
-        projectileData.velocity += Vector3.down * GetGravity() * inDeltaTime;
         projectileData.speed += projectileData.accelerate * inDeltaTime;
         projectileData.speed = Mathf.Clamp(projectileData.speed, 0, projectileData.maxSpeed);
+        projectileData.gravity += GetGravity() * Vector3.down * inDeltaTime;
+        projectileData.velocity = projectileData.relativeForward * projectileData.speed + projectileData.gravity;
 
-        m_Rigidbody.velocity = projectileData.velocity.normalized * projectileData.speed;
+        m_Rigidbody.velocity = projectileData.velocity;
     }
     /// <summary>
     /// 跟踪目标模式
