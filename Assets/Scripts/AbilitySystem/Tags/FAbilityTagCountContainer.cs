@@ -12,11 +12,11 @@ public struct FAbilityTagCountContainer
     {
         if (inAbilityTagContainer.IsEmpty()) return;
 
-        //foreach (FAbilityTag abilityTag in inAbilityTagContainer.abilityTags)
-        //{
-        //    AddTag(abilityTag);
-        //}
-        AddTag(inAbilityTagContainer.abilityTags[inAbilityTagContainer.abilityTags.Count - 1]);
+        foreach (FAbilityTag abilityTag in inAbilityTagContainer.abilityTags)
+        {
+            AddTag(abilityTag);
+        }
+        //AddTag(inAbilityTagContainer.abilityTags[inAbilityTagContainer.abilityTags.Count - 1]);
     }
     public void AddTag(FAbilityTag inAbilityTag,int inNum = 1)
     {
@@ -36,11 +36,11 @@ public struct FAbilityTagCountContainer
     {
         if (inAbilityTagContainer.IsEmpty()) return;
 
-        //foreach (FAbilityTag abilityTag in inAbilityTagContainer.abilityTags)
-        //{
-        //    AddTag(abilityTag, -1);
-        //}
-        AddTag(inAbilityTagContainer.abilityTags[inAbilityTagContainer.abilityTags.Count - 1], -1);
+        foreach (FAbilityTag abilityTag in inAbilityTagContainer.abilityTags)
+        {
+            AddTag(abilityTag, -1);
+        }
+        //AddTag(inAbilityTagContainer.abilityTags[inAbilityTagContainer.abilityTags.Count - 1], -1);
     }
     public void UpdateTagRef(FAbilityTag inAbilityTag,int inCountDelta)
     {

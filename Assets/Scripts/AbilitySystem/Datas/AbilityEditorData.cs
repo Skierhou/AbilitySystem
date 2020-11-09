@@ -51,6 +51,11 @@ public class AbilityEditorData : ScriptableObject
     public List<string> passiveAbilityListenerTags;
     public List<string> passiveAbilityTriggerTags;
 
+    public List<string> otherTags_1;
+    public List<string> otherTags_2;
+    public List<string> otherTags_3;
+    public List<string> otherTags_4;
+
     [Header("Is Open Block/Cannelable/Immediate")]
     public bool bImmediately;
     public bool bIsCancelable = true;
@@ -107,7 +112,7 @@ public class AbilityEditorData : ScriptableObject
 
     public static void ReadChildInfo(Type type, AbilityEditorData abilityEditorData, object owner)
     {
-        int int_index = 0, float_index = 0, string_index = 0, bool_index = 0, unity_index = 0;
+        int int_index = 0, float_index = 0, string_index = 0, bool_index = 0, unity_index = 0, tag_index = 0;
         while (type != typeof(AbilityBase) && type != typeof(UnityEngine.Object) && type != typeof(System.Object))
         {
             FieldInfo[] tFieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public);
@@ -132,6 +137,8 @@ public class AbilityEditorData : ScriptableObject
                         obj = abilityEditorData.child_BaseDatas_String[string_index++];
                     else if (tFieldInfos[i].FieldType == typeof(char))
                         obj = abilityEditorData.child_BaseDatas_String[string_index++][0];
+                    else if (type == typeof(FAbilityTagContainer) || type == typeof(List<FAbilityTagContainer>))
+                        obj = GetTags(ref tag_index, abilityEditorData, type);
                     else
                         obj = unity_index < abilityEditorData.child_UnityDatas.Count ? abilityEditorData.child_UnityDatas[unity_index++] : null;
                     if(obj != null)
@@ -140,5 +147,47 @@ public class AbilityEditorData : ScriptableObject
             }
             type = type.BaseType;
         }
+    }
+    static object GetTags(ref int tag_index, AbilityEditorData abilityEditorData, Type type)
+    {
+        object res = null;
+        List<string> list = null;
+        switch (tag_index)
+        {
+            case 0:
+                list = abilityEditorData.otherTags_1;
+                break;
+            case 1:
+                list = abilityEditorData.otherTags_2;
+                break;
+            case 2:
+                list = abilityEditorData.otherTags_3;
+                break;
+            case 3:
+                list = abilityEditorData.otherTags_4;
+                break;
+            default:
+                break;
+        }
+        if (list != null)
+        {
+            if (type == typeof(FAbilityTagContainer))
+            {
+                if (list.Count > 0)
+                    res = AbilityTagManager.Instance.GetTagContainer(list[0]);
+            }
+            else
+            {
+                List<FAbilityTagContainer> tags = new List<FAbilityTagContainer>();
+
+                foreach (string tag in list)
+                {
+                    tags.Add(AbilityTagManager.Instance.GetTagContainer(tag));
+                }
+                res = tags;
+            }
+        }
+        ++tag_index;
+        return res;
     }
 }

@@ -29,6 +29,7 @@ public class AbilityBuffMotionModifiers : AbilityBuffModifiers
         duration = data.duration;
         moveType = data.moveType;
         distance = data.distance;
+        direction = data.direction;
         rotateType = data.rotateType;
         rotateAxis = data.rotateAxis;
         rotateAngle = data.rotateAngle;
@@ -42,11 +43,7 @@ public class AbilityBuffMotionModifiers : AbilityBuffModifiers
     }
     public override void ApplyModifier(int level = 0)
     {
-        abilitySystem.MovmentComponent.StartMotion();
         abilitySystem.MovmentComponent.ApplyMotion(priority, moveType, direction, distance[level], duration[level], moveCurve);
-        if(rotateCurve != null)
-            abilitySystem.MovmentComponent.ApplyRotate(priority, rotateType, abilitySystem.transform.rotation, rotateAxis, rotateAngle[level], duration[level], rotateCurve);
-        else
-            abilitySystem.MovmentComponent.ApplyRotate(priority, rotateType, rotateAxis, rotateAngle[level], duration[level]);
+        abilitySystem.MovmentComponent.ApplyRotate(priority, rotateType, rotateAxis, rotateAngle[level], duration[level], rotateCurve);
     }
 }

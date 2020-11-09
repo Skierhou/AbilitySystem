@@ -76,7 +76,7 @@ public struct FAbilityData
     public ETargetType targetType;
     public KeyCode selectKeyCode;
     public KeyCode unSelectKeyCode;
-    public ESelectTarget selectTargetType;
+    public ESelectTarget selectTargetStatus;
 
     // 施法范围
     public float spellRange;

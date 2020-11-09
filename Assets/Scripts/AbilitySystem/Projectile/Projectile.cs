@@ -62,6 +62,9 @@ public enum EDirectType
     DT_WorldForward,
     DT_WorldRight,
     DT_WorldUp,
+    DT_SelfForward,
+    DT_SelfRight,
+    DT_SelfUp,
 }
 
 public struct FProjectileCurveData

@@ -105,7 +105,7 @@ public class Ability: AbilityBase, IAbility
     }
     public override bool CanActivateAbility()
     {
-        return !IsActive && abilityData.selectTargetType == ESelectTarget.ST_None && (effect_CoolDown != null ? effect_CoolDown.CanActivateAbility() : true) && CanCost();
+        return !IsActive && abilityData.selectTargetStatus == ESelectTarget.ST_None && (effect_CoolDown != null ? effect_CoolDown.CanActivateAbility() : true) && CanCost();
     }
     public override void EndAbility()
     {
@@ -169,39 +169,23 @@ public class Ability: AbilityBase, IAbility
     protected virtual void SetSkillActive(bool inActive)
     {
         IsActive = inActive;
-        if (IsActive)
-        {
-            abilitySystem.OnActivateAbilitySuccess(this);
-            if (IsBlockingOtherAbilities)
-                abilitySystem.AddBlockTags(blockAbilitiesWithTags);
-            abilitySystem.AddActivateTags(abilityTags);
-            abilitySystem.AddActivateTags(activationOwnedTags);
-        }
-        else
-        {
-            if (IsBlockingOtherAbilities)
-                abilitySystem.RemoveBlockTags(blockAbilitiesWithTags);
-            abilitySystem.RemoveActivateTags(abilityTags);
-            abilitySystem.RemoveActivateTags(activationOwnedTags);
-        }
+        abilitySystem.OnAbilitySetActivate(this,inActive);
     }
     /// <summary>
     /// 常规技能实现
     /// </summary>
     protected virtual IEnumerator Skill()
     {
-        abilityData.selectTargetType = ESelectTarget.ST_None;
+        abilityData.selectTargetStatus = ESelectTarget.ST_None;
         if (abilityData.targetType != ETargetType.ETT_None)
         {
             //等待选择目标
-            abilityData.selectTargetType = ESelectTarget.ST_WaitingSelect;
-            abilitySystem.WaitingSelectTargetEvent(abilityData.targetType, abilityData.selectKeyCode, abilityData.unSelectKeyCode, OnSelectTarget);
-            while (abilityData.selectTargetType == ESelectTarget.ST_WaitingSelect)
-            {
-                yield return null;
-            }
+            abilityData.selectTargetStatus = ESelectTarget.ST_WaitingSelect;
+            WaitingSelectTarget waitingSelect = GetWaitingSelectTarget();
+            yield return waitingSelect;
+            abilityData.selectTargetStatus = waitingSelect.selectTargetStatus;
         }
-        if (abilityData.selectTargetType != ESelectTarget.ST_SelectFail)
+        if (abilityData.selectTargetStatus != ESelectTarget.ST_SelectFail)
         {
             SetSkillActive(true);
             OnAbilityStart();
@@ -236,14 +220,20 @@ public class Ability: AbilityBase, IAbility
                     break;
             }
         }
-        abilityData.selectTargetType = ESelectTarget.ST_None;
+        abilityData.selectTargetStatus = ESelectTarget.ST_None;
     }
+
+    protected WaitingSelectTarget GetWaitingSelectTarget()
+    {
+        return new WaitingSelectTarget(abilityData.targetType, abilityData.selectKeyCode, abilityData.unSelectKeyCode, abilitySystem, this);
+    }
+
     /// <summary>
     /// 选择成功或失败后回调
     /// </summary>
     protected virtual void OnSelectTarget(bool IsSelectSuc, Vector3 selectPoint, AbilitySystemComponent targetSystems = null)
     {
-        abilityData.selectTargetType = IsSelectSuc ? ESelectTarget.ST_SelectSuccess : ESelectTarget.ST_SelectFail;
+        abilityData.selectTargetStatus = IsSelectSuc ? ESelectTarget.ST_SelectSuccess : ESelectTarget.ST_SelectFail;
     }
     /// <summary>
     /// 技能开始

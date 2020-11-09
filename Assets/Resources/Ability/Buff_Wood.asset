@@ -14,6 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AbilityScript: {fileID: 11500000, guid: fa2b5391fe53f244883a96ea1d30fba9, type: 3}
   abilityType: 0
+  passiveAbilityListenerTags: []
+  passiveAbilityTriggerTags: []
+  otherTags_1: []
+  otherTags_2: []
+  otherTags_3: []
+  otherTags_4: []
   bImmediately: 0
   bIsCancelable: 1
   bIsBlockingOtherAbilities: 1
@@ -27,8 +33,10 @@ MonoBehaviour:
   channelEndTime: 0
   abilityTags:
   - Wood.Buff
-  cancelAbilitiesWithTags: []
-  blockAbilitiesWithTags: []
+  cancelAbilitiesWithTags:
+  - Soil
+  blockAbilitiesWithTags:
+  - Soil
   activationOwnedTags: []
   sourceRequiredTags: []
   sourceBlockedTags: []
@@ -41,29 +49,11 @@ MonoBehaviour:
   Buff_Data:
     durationPolicy: 2
     duration:
-    - 2
+    - 5
     interval:
     - 1
-  Buff_Modifiers:
-  - attributeType: 1
-    modifierOption: 0
-    modifierType: 0
-    attributeMagnitudeList:
-    - 10
-  Buff_MotionModifiers:
-  - priority: 1
-    duration:
-    - 2
-    moveType: 2
-    direction: 3
-    distance:
-    - 10
-    rotateType: 2
-    rotateAxis: 5
-    rotateAngle:
-    - 180
-    moveCurve: 1
-    rotateCurve: 0
+  Buff_Modifiers: []
+  Buff_MotionModifiers: []
   child_UnityDatas:
   - {fileID: 7050471418454729310, guid: 86f62766ed20bd04c805b05bf85bce4b, type: 3}
   child_BaseDatas_Int: 

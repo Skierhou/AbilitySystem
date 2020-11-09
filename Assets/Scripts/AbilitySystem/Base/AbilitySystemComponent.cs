@@ -193,20 +193,45 @@ public class AbilitySystemComponent : MonoBehaviour, IAbilitySystem
         return inAbility is object && (inAbility.IsImmediately || (!blockAbilityTagsContainer.HasBlockMatchingTags(inAbility.abilityTags) && CheckSourceTags(inAbility)));
     }
 
-    public virtual void OnActivateAbilitySuccess(AbilityBase inAbility)
+    public virtual void OnAbilitySetActivate(AbilityBase inAbility,bool inIsActive)
     {
-        // 移除cancel列表的技能
-        CancelAbilityByOther(inAbility);
-        // 触发该Tag对应事件
-        TriggerEventByAbility(inAbility);
-        // 添加至激活列表
-        activityAbilities.Add(inAbility);
+        if (inIsActive)
+        {
+            // 移除cancel列表的技能
+            CancelAbilityByOther(inAbility);
+            // 触发该Tag对应事件
+            TriggerEventByAbility(inAbility);
+            // 添加至激活列表
+            activityAbilities.Add(inAbility);
+
+            if (inAbility.IsBlockingOtherAbilities)
+                AddBlockTags(inAbility.blockAbilitiesWithTags);
+            AddActivateTags(inAbility.abilityTags);
+            AddActivateTags(inAbility.activationOwnedTags);
+        }
+        else
+        {
+            if (inAbility.IsBlockingOtherAbilities)
+                RemoveBlockTags(inAbility.blockAbilitiesWithTags);
+            RemoveActivateTags(inAbility.abilityTags);
+            RemoveActivateTags(inAbility.activationOwnedTags);
+        }
     }
+    void Update()
+    {
+        if (needRemoveList.Count > 0)
+        {
+            activityAbilities.Remove(needRemoveList[0]);
+            needRemoveList.RemoveAt(0);
+        }
+    }
+    List<AbilityBase> needRemoveList = new List<AbilityBase>();
     public virtual void OnEndAbility(AbilityBase inAbility)
     {
         if (inAbility is object)
         {
-            activityAbilities.Remove(inAbility);
+            needRemoveList.Add(inAbility);
+            //activityAbilities.Remove(inAbility);
             if (inAbility is AbilityBuff)
                 buffMap.Remove(inAbility.abilityTags);
         }
@@ -276,63 +301,6 @@ public class AbilitySystemComponent : MonoBehaviour, IAbilitySystem
         }
     }
     #endregion
-
-    public void WaitingSelectTargetEvent(ETargetType targetType,KeyCode selectKeyCode, KeyCode unSelectKeyCode, Action<bool, Vector3, AbilitySystemComponent> onSelectTarget)
-    {
-        StartCoroutine(Cor_WaitingSelectTarget(targetType, selectKeyCode, unSelectKeyCode, onSelectTarget));
-    }
-    IEnumerator Cor_WaitingSelectTarget(ETargetType targetType, KeyCode selectKeyCode, KeyCode unSelectKeyCode, Action<bool, Vector3, AbilitySystemComponent> onSelectTarget)
-    {
-        if (selectKeyCode == KeyCode.None)
-            selectKeyCode = KeyCode.Mouse0;    
-        if (unSelectKeyCode == KeyCode.None)
-            unSelectKeyCode = KeyCode.Mouse1;
-
-        bool bSelect = false;
-        while (!bSelect)
-        {
-            while (!Input.GetKeyDown(selectKeyCode) && !Input.GetKeyDown(unSelectKeyCode))
-                yield return null;
-
-            if (Input.GetKeyDown(selectKeyCode))
-            {
-                if (targetType == ETargetType.ETT_Target)
-                {
-                    // 射线检测
-                    if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hitInfo) && hitInfo.collider != null)
-                    {
-                        AbilitySystemComponent target = hitInfo.collider.GetComponent<AbilitySystemComponent>();
-                        if (target != null)
-                        {
-                            bSelect = true;
-                            onSelectTarget?.Invoke(true, target.transform.position, target);
-                        }
-                    }
-                }
-                else
-                {
-                    // 鼠标位置
-                    if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hitInfo) && hitInfo.collider != null)
-                    {
-                        bSelect = true;
-                        onSelectTarget?.Invoke(true, hitInfo.point, null);
-                    }
-                    else
-                    {
-                        bSelect = true;
-                        onSelectTarget?.Invoke(true, transform.forward, null);
-                    }
-                }
-            }
-            else
-            {
-                bSelect = true;
-                onSelectTarget?.Invoke(false, Vector3.zero, null);
-            }
-            yield return null;
-        }
-    }
-
 
     #region Buff
     public bool TryActivateBuffByTag(string inTag,int inLevel = 0,int inStackDelta = 1,bool bForceActivate = false)

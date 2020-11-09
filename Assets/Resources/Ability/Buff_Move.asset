@@ -16,6 +16,10 @@ MonoBehaviour:
   abilityType: 0
   passiveAbilityListenerTags: []
   passiveAbilityTriggerTags: []
+  otherTags_1: []
+  otherTags_2: []
+  otherTags_3: []
+  otherTags_4: []
   bImmediately: 0
   bIsCancelable: 1
   bIsBlockingOtherAbilities: 1
@@ -36,10 +40,6 @@ MonoBehaviour:
   sourceBlockedTags: []
   targetRequiredTags: []
   targetBlockedTags: []
-  otherTags_1: []
-  otherTags_2: []
-  otherTags_3: []
-  otherTags_4: []
   Buff_CoolDown: {fileID: 0}
   Buff_Cost: {fileID: 0}
   Activity_Self_Buffs: []
@@ -62,7 +62,7 @@ MonoBehaviour:
     rotateAngle:
     - 0
     moveCurve: 1
-    rotateCurve: 0
+    rotateCurve: -1
   child_UnityDatas:
   - {fileID: 0}
   child_BaseDatas_Int: 

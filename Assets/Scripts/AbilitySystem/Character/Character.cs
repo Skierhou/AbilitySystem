@@ -37,7 +37,7 @@ public class Character : MonoBehaviour
     }
 
     #region Unity Life
-    private void Start()
+    private void Awake()
     {
         AbilitySystemComponent = GetComponent<AbilitySystemComponent>();
         MovementComponent = GetComponent<MovementComponent>();

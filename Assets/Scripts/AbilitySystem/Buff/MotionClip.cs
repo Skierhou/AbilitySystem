@@ -16,10 +16,12 @@ public enum EMotionType
 public class MotionClip
 {
     public int priority;
-    public float duration;
+    public float duration_Rotate;
+    public float duration_Move;
 
     /* 固定方向距离位移 */
     public EMotionType motionType;
+    public EDirectType directType;
     public Vector3 direction;
     public float distance;
 
@@ -44,55 +46,66 @@ public class MotionClip
     Vector3 angularVelocity;
 
     Transform transform;
-    float startTime;
+    float startTime_Rotate;
+    float startTime_Move;
 
     public MotionClip(Transform transform)
     {
         this.transform = transform;
     }
 
-    public void StartMotion()
-    {
-        Reset();
-        startTime = Time.time;
-        OnMotionStart?.Invoke();
-    }
     public void ApplyMotion(int priority, EMotionType motionType, EDirectType directType, float distance, float duration = 0.0f, AnimationCurve moveCurve = null)
     {
+        if (this.priority < priority)
+        {
+            Reset();
+            OnMotionStart?.Invoke();
+        }
+        startTime_Move = Time.time;
         this.priority = priority;
         this.motionType = motionType;
+        this.directType = directType;
         this.direction = GetDirection(directType);
         this.distance = distance;
-        this.duration = duration;
+        this.duration_Move = duration;
         this.moveCurve = moveCurve;
     }
-    public void ApplyRotate(int priority, EMotionType rotateType, EDirectType asixType, float rotateAngle, float duration = 0.0f)
+    public void ApplyRotate(int priority, EMotionType rotateType, EDirectType asixType, float rotateAngle, float duration = 0.0f, AnimationCurve rotateCurve = null)
     {
+        if (this.priority < priority)
+        {
+            Reset();
+            OnMotionStart?.Invoke();
+        }
+        startTime_Rotate = Time.time;
         this.priority = priority;
         this.rotateType = rotateType;
         this.torque = GetTorque(asixType, rotateAngle);
-        this.duration = duration;
+        this.duration_Rotate = duration;
+        this.rotateCurve = rotateCurve;
     }
 
-    public void ApplyRotate(int priority, EMotionType rotateType, Quaternion startRot, EDirectType rotateAxis, float rotateAngle, float duration = 0.0f, AnimationCurve rotateCurve = null)
-    {
-        bLookAt = true;
-        this.priority = priority;
-        this.rotateType = rotateType;
-        this.startRot = startRot;
-        this.duration = duration;
-        this.rotateCurve = rotateCurve;
-        this.torque = GetTorque(rotateAxis, rotateAngle);
-        endRot = Quaternion.Euler(startRot.eulerAngles + GetTorque(rotateAxis, rotateAngle));
-    }
+    //public void ApplyRotate(int priority, EMotionType rotateType, Quaternion startRot, EDirectType rotateAxis, float rotateAngle, float duration = 0.0f, AnimationCurve rotateCurve = null)
+    //{
+    //    bLookAt = true;
+    //    this.priority = priority;
+    //    this.rotateType = rotateType;
+    //    this.startRot = startRot;
+    //    this.duration = duration;
+    //    this.rotateCurve = rotateCurve;
+    //    this.torque = GetTorque(rotateAxis, rotateAngle);
+    //    endRot = Quaternion.Euler(startRot.eulerAngles + GetTorque(rotateAxis, rotateAngle));
+    //}
 
     public virtual void TickMotion(float inDeltaTime)
     {
-        if (duration > 0.0f && Time.time - startTime <= duration)
+        if (duration_Move > 0.0f && Time.time - startTime_Move <= duration_Move)
         {
             Update_Motion(inDeltaTime);
+        }
+        if (duration_Rotate > 0.0f && Time.time - startTime_Rotate <= duration_Rotate)
+        {
             Update_Rotate(inDeltaTime);
-            OnMotionUpdate?.Invoke();
         }
         else if (priority >= 0)
         {
@@ -105,7 +118,9 @@ public class MotionClip
     {
         bLookAt = false;
         priority = -1;
-        duration = 0.0f;
+        directType = EDirectType.DT_WorldForward;
+        duration_Move = 0.0f;
+        duration_Rotate = 0.0f;
         velocity = Vector3.zero;
         angularVelocity = Vector3.zero;
         motionType = EMotionType.MT_Additive;
@@ -117,36 +132,54 @@ public class MotionClip
         float delta1, delta2;
         if (moveCurve is object)
         {
-            delta1 = distance * moveCurve.Evaluate((Time.time - startTime) / duration);
-            delta2 = distance * moveCurve.Evaluate((Time.time - startTime + inDeltaTime) / duration);
+            delta1 = distance * moveCurve.Evaluate((Time.time - startTime_Move) / duration_Move);
+            delta2 = distance * moveCurve.Evaluate((Time.time - startTime_Move + inDeltaTime) / duration_Move);
         }
         else
         {
-            delta1 = Mathf.Lerp(0, distance, (Time.time - startTime) / duration);
-            delta2 = Mathf.Lerp(0, distance, (Time.time - startTime + inDeltaTime) / duration);
+            delta1 = Mathf.Lerp(0, distance, (Time.time - startTime_Move) / duration_Move);
+            delta2 = Mathf.Lerp(0, distance, (Time.time - startTime_Move + inDeltaTime) / duration_Move);
+        }
+        switch (directType)
+        {
+            case EDirectType.DT_SelfForward:
+                direction = transform.forward;
+                break;
+            case EDirectType.DT_SelfRight:
+                direction = transform.right;
+                break;
+            case EDirectType.DT_SelfUp:
+                direction = transform.up;
+                break;
         }
         velocity = (delta2 - delta1) * direction / inDeltaTime;
     }
     private void Update_Rotate(float inDeltaTime)
     {
-        if (bLookAt)
+        //if (bLookAt)
+        //{
+        //    Vector3 v1, v2;
+        //    if (moveCurve is object)
+        //    {
+        //        v1 = Quaternion.Lerp(startRot, endRot, rotateCurve.Evaluate((Time.time - startTime) / duration)).eulerAngles;
+        //        v2 = Quaternion.Lerp(startRot, endRot, rotateCurve.Evaluate((Time.time - startTime + inDeltaTime) / duration)).eulerAngles;
+        //    }
+        //    else
+        //    {
+        //        v1 = Quaternion.Lerp(startRot, endRot, (Time.time - startTime) / duration).eulerAngles;
+        //        v2 = Quaternion.Lerp(startRot, endRot, (Time.time - startTime + inDeltaTime) / duration).eulerAngles;
+        //    }
+        //    angularVelocity = (MathEx.ClampVector360(v2) - MathEx.ClampVector360(v1)) / inDeltaTime;
+        //}
+        //else
+        //{
+        //    angularVelocity = torque;
+        //}
+        angularVelocity = torque;
+        if (moveCurve is object)
         {
-            Vector3 v1, v2;
-            if (moveCurve is object)
-            {
-                v1 = Quaternion.Lerp(startRot, endRot, rotateCurve.Evaluate((Time.time - startTime) / duration)).eulerAngles;
-                v2 = Quaternion.Lerp(startRot, endRot, rotateCurve.Evaluate((Time.time - startTime + inDeltaTime) / duration)).eulerAngles;
-            }
-            else
-            {
-                v1 = Quaternion.Lerp(startRot, endRot, (Time.time - startTime) / duration).eulerAngles;
-                v2 = Quaternion.Lerp(startRot, endRot, (Time.time - startTime + inDeltaTime) / duration).eulerAngles;
-            }
-            angularVelocity = (MathEx.ClampVector360(v2) - MathEx.ClampVector360(v1)) / inDeltaTime;
-        }
-        else
-        {
-            angularVelocity = torque;
+            float rate = (Time.time - startTime_Rotate) / duration_Rotate;
+            angularVelocity *= moveCurve.Evaluate(rate) / rate;
         }
     }
     Vector3 GetDirection(EDirectType directType)
@@ -173,10 +206,13 @@ public class MotionClip
         switch (asixType)
         {
             case EDirectType.DT_RelativeForward:
+            case EDirectType.DT_SelfForward:
                 return rotateAngle * transform.forward;
             case EDirectType.DT_RelativeRight:
+            case EDirectType.DT_SelfRight:
                 return rotateAngle * transform.right;
             case EDirectType.DT_RelativeUp:
+            case EDirectType.DT_SelfUp:
                 return rotateAngle * transform.up;
             case EDirectType.DT_WorldForward:
                 return rotateAngle * Vector3.forward;

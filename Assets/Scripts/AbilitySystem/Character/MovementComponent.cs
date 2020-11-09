@@ -14,6 +14,8 @@ public class MovementComponent : MonoBehaviour
     public Controller Controller { get; protected set; }
     public CharacterController CharacterController { get; protected set; }
 
+    public bool IsDirectVelocity = true;
+
     //Motion
     public MotionClip MotionClip { get; protected set; }
     public RootMotionClip RootMotionClip { get; protected set; }
@@ -25,13 +27,13 @@ public class MovementComponent : MonoBehaviour
     private void Awake()
     {
         CharacterController = GetComponent<CharacterController>();
+        MotionClip = new MotionClip(transform);
+        RootMotionClip = new RootMotionClip(GetComponentInChildren<Animator>());
     }
 
     public virtual void OnPossess(Controller controller)
     {
         Controller = controller;
-        MotionClip = new MotionClip(transform);
-        RootMotionClip = new RootMotionClip(GetComponentInChildren<Animator>());
     }
     public virtual void OnUnPossess()
     {
@@ -43,16 +45,10 @@ public class MovementComponent : MonoBehaviour
         if (MotionClip is object)
             MotionClip.TickMotion(Time.fixedDeltaTime);
 
-        // 计算重力
-        if (CharacterController.isGrounded)
-            Gravity = Vector3.zero;
-        else
-            Gravity += Physics.gravity * Time.fixedDeltaTime;
-
         Velocity = CalculateVeloctiy();
         AngularVelocity = CalculateAngularVelocity();
 
-        CharacterController.SimpleMove(Velocity);
+        CharacterController.Move(Velocity * Time.fixedDeltaTime);
         transform.eulerAngles += AngularVelocity * Time.fixedDeltaTime;
     }
     #region Motion
@@ -66,7 +62,23 @@ public class MovementComponent : MonoBehaviour
         {
             return RootMotionClip.GetVelocity();
         }
-        return MotionClip.GetVelocity() + RootMotionClip.GetVelocity() + Controller.GetInputVelocity() + Gravity;
+        // 计算重力
+        if (CharacterController.isGrounded)
+            Gravity = Vector3.zero;
+        else
+            Gravity += Physics.gravity * Time.fixedDeltaTime;
+        Vector3 res = Vector3.zero;
+        if (MotionClip is object)
+            res += MotionClip.GetVelocity();
+        if (RootMotionClip is object)
+            res += RootMotionClip.GetVelocity();
+        if (Controller is object)
+        {
+            res += Controller.GetInputVelocity();
+            if (IsDirectVelocity)
+                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(Controller.GetInputVelocity(), Vector3.up), Time.fixedDeltaTime * 10);
+        }
+        return res + Gravity;
     }
 
     public virtual Vector3 CalculateAngularVelocity()
@@ -79,7 +91,14 @@ public class MovementComponent : MonoBehaviour
         {
             return RootMotionClip.GetAngularVelocity();
         }
-        return MotionClip.GetAngularVelocity() + RootMotionClip.GetAngularVelocity() + Controller.GetInputAngularVelocity();
+        Vector3 res = Vector3.zero;
+        if (MotionClip is object)
+            res += MotionClip.GetAngularVelocity();
+        if (RootMotionClip is object)
+            res += RootMotionClip.GetAngularVelocity();
+        if (Controller is object)
+            res += Controller.GetInputAngularVelocity();
+        return res;
     }
 
     public bool CanApplyMotion(int priority)
@@ -117,21 +136,13 @@ public class MovementComponent : MonoBehaviour
                 break;
         }
     }
-    public void StartMotion()
-    {
-        MotionClip.StartMotion();
-    }
     public void ApplyMotion(int priority, EMotionType motionType, EDirectType directType, float distance, float duration = 0.0f, AnimationCurve moveCurve = null)
     {
         MotionClip.ApplyMotion(priority, motionType, directType, distance, duration, moveCurve);
     }
-    public void ApplyRotate(int priority, EMotionType rotateType, EDirectType asixType, float rotateAngle, float duration = 0.0f)
+    public void ApplyRotate(int priority, EMotionType rotateType, EDirectType asixType, float rotateAngle, float duration = 0.0f, AnimationCurve rotateCurve = null)
     {
-        MotionClip.ApplyRotate(priority, rotateType, asixType, rotateAngle, duration);
-    }
-    public void ApplyRotate(int priority, EMotionType rotateType, Quaternion startRot, EDirectType rotateAxis, float rotateAngle, float duration = 0.0f, AnimationCurve rotateCurve = null)
-    {
-        MotionClip.ApplyRotate(priority, rotateType, startRot, rotateAxis, rotateAngle, duration, rotateCurve);
+        MotionClip.ApplyRotate(priority, rotateType, asixType, rotateAngle, duration, rotateCurve);
     }
     #endregion
 }

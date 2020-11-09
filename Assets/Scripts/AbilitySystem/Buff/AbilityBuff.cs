@@ -115,7 +115,7 @@ public class AbilityBuff : AbilityBase, IAbilityBuff
         {
             case EDurationPolicy.EDP_Instant:
                 OnBuff();
-                EndAbility();
+                cor_Buff = abilitySystem.StartCoroutine(Buff(0.0f));
                 break;
             case EDurationPolicy.EDP_Infinite:
                 cor_Buff = abilitySystem.StartCoroutine(Buff(float.MaxValue));
@@ -130,40 +130,49 @@ public class AbilityBuff : AbilityBase, IAbilityBuff
         if (IsActive == inActive) return;
 
         IsActive = inActive;
-        if (IsActive)
-        {
-            abilitySystem.AddBlockTags(blockAbilitiesWithTags);
-            abilitySystem.AddActivateTags(abilityTags);
-            abilitySystem.AddActivateTags(activationOwnedTags);
-        }
-        else
-        {
-            abilitySystem.RemoveBlockTags(blockAbilitiesWithTags);
-            abilitySystem.RemoveActivateTags(abilityTags);
-            abilitySystem.RemoveActivateTags(activationOwnedTags);
-        }
+        abilitySystem.OnAbilitySetActivate(this,inActive);
     }
     protected virtual IEnumerator Buff(float inDuration)
     {
-        float timer = buffData.bActiveFirst ? 0.0f : buffData.intervals[Level];
-        Duration = inDuration;
-        while (Duration > 0.0f)
+        if (inDuration > 0.0f)
         {
-            if (timer > 0.0f)
+            float timer = buffData.bActiveFirst ? 0.0f : buffData.intervals[Level];
+            Duration = inDuration;
+            while (Duration > 0.0f)
             {
-                timer -= Time.deltaTime;
+                if (timer > 0.0f)
+                {
+                    timer -= Time.deltaTime;
+                }
+                else
+                {
+                    timer = buffData.intervals[Level];
+                    OnBuff();
+                }
+                Duration -= Time.deltaTime;
+                yield return null;
             }
-            else
-            {
-                timer = buffData.intervals[Level];
-                OnBuff();
-            }
-            Duration -= Time.deltaTime;
-            yield return null;
         }
+        //Wait Modifiers
+        yield return new WaitForSeconds(GetModifiersDuration() -inDuration);
+
         EndAbility();
         cor_Buff = null;
     }
+
+    protected float GetModifiersDuration()
+    {
+        float duration = 0.0f;
+        foreach (var modifier in buffData.modifiers)
+        {
+            if (modifier is AbilityBuffMotionModifiers motionModifiers)
+            {
+                duration = Mathf.Max(motionModifiers.duration[Level], duration);
+            }
+        }
+        return duration;
+    }
+
     protected virtual void OnBuffStart() { }
     protected virtual void OnBuff() 
     {

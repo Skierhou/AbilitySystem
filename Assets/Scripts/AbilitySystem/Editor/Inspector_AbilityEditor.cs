@@ -19,7 +19,10 @@ public enum EEditor_AbilityTagType
     EATT_ActivityTargetBuffTags,
     EATT_PassiveAbilityListenerTags,
     EATT_PassiveAbilityTriggerTags,
-    EATT_Other,
+    EATT_OtherTags_1,
+    EATT_OtherTags_2,
+    EATT_OtherTags_3,
+    EATT_OtherTags_4,
 };
 
 [CustomEditor(typeof(AbilityEditorData))]
@@ -59,7 +62,7 @@ public class Inspector_AbilityEditorData : Editor
     // 开关
     private List<bool> bUseLists;
 
-    int string_index = 0, int_index = 0, float_index = 0, bool_index = 0, unity_index;
+    int string_index = 0, int_index = 0, float_index = 0, bool_index = 0, unity_index , tag_index = 0;
 
     bool bIsBuff = false;
 
@@ -109,7 +112,7 @@ public class Inspector_AbilityEditorData : Editor
     }
     public override void OnInspectorGUI()
     {
-        unity_index = 0; string_index = 0; int_index = 0; float_index = 0; bool_index = 0;
+        unity_index = 0; string_index = 0; int_index = 0; float_index = 0; bool_index = 0; tag_index = 0;
         // self ability tags
         EditorGUILayout.PropertyField(AbilityScript);
         MonoScript ms = (MonoScript)AbilityScript.objectReferenceValue;
@@ -372,6 +375,18 @@ public class Inspector_AbilityEditorData : Editor
             case EEditor_AbilityTagType.EATT_PassiveAbilityTriggerTags:
                 ability.passiveAbilityTriggerTags = new List<string>(list);
                 break;
+            case EEditor_AbilityTagType.EATT_OtherTags_1:
+                ability.otherTags_1 = new List<string>(list);
+                break;
+            case EEditor_AbilityTagType.EATT_OtherTags_2:
+                ability.otherTags_2 = new List<string>(list);
+                break;
+            case EEditor_AbilityTagType.EATT_OtherTags_3:
+                ability.otherTags_3 = new List<string>(list);
+                break;
+            case EEditor_AbilityTagType.EATT_OtherTags_4:
+                ability.otherTags_4 = new List<string>(list);
+                break;
             default:
                 break;
         }
@@ -439,11 +454,11 @@ public class Inspector_AbilityEditorData : Editor
                         EditorGUI.indentLevel = 2;
                         bTitle = true;
                     }
-                    //if (tFieldInfos[i].FieldType == typeof(List<FAbilityTagContainer>))
-                    //{
-                    //    CreateAbilityTag(ability.child_BaseDatas_String,string_index,,EEditor_AbilityTagType.EATT_Other, tFieldInfos[i].Name);
-                    //}
-                    if (IsBaseData(tFieldInfos[i].FieldType))
+                    if (tFieldInfos[i].FieldType == typeof(List<FAbilityTagContainer>) || tFieldInfos[i].FieldType == typeof(FAbilityTagContainer))
+                    {
+                        CreateAbilityOtherTags(tFieldInfos[i].Name, tFieldInfos[i].FieldType);
+                    }
+                    else if (IsBaseData(tFieldInfos[i].FieldType))
                     {
                         CreateBaseData(tFieldInfos[i].FieldType, tFieldInfos[i].Name);
                     }
@@ -459,6 +474,43 @@ public class Inspector_AbilityEditorData : Editor
             type = type.BaseType;
         }
     }
+
+    private void CreateAbilityOtherTags(string name,Type type)
+    {
+        List<string> list = null;
+        EEditor_AbilityTagType abilityTagtype = EEditor_AbilityTagType.EATT_OtherTags_1;
+        switch (tag_index)
+        {
+            case 0:
+                list = ability.otherTags_1;
+                abilityTagtype = EEditor_AbilityTagType.EATT_OtherTags_1;
+                break;
+            case 1:
+                list = ability.otherTags_2;
+                abilityTagtype = EEditor_AbilityTagType.EATT_OtherTags_2;
+                break;
+            case 2:
+                list = ability.otherTags_3;
+                abilityTagtype = EEditor_AbilityTagType.EATT_OtherTags_3;
+                break;
+            case 3:
+                list = ability.otherTags_4;
+                abilityTagtype = EEditor_AbilityTagType.EATT_OtherTags_4;
+                break;
+        }
+        if (type == typeof(FAbilityTagContainer))
+        {
+            if (list is object && list.Count > 1)
+            {
+                string str = list[list.Count - 1];
+                list.Clear();
+                list.Add(str);
+            }
+        }
+        CreateAbilityTag(list, abilityTagtype, name);
+        ++tag_index;
+    }
+
     bool IsBaseData(Type type)
     {
         return type.IsEnum || type.IsValueType || type.IsArray || type == typeof(object) || type == typeof(string);
