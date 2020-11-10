@@ -43,4 +43,5 @@ public class FAttributeData
 
         OnDataChangedDeletage?.Invoke(BaseValue, CurrentValue);
     }
+
 }

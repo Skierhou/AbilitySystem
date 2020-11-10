@@ -17,7 +17,7 @@ public class AbilityBuffTest : AbilityBuff
         {
             m_PSCInstance = GameObject.Instantiate(m_ParticleSystem, abilitySystem.transform);
             m_PSCInstance.transform.localScale = Vector3.one;
-            m_PSCInstance.transform.localPosition = Vector3.zero;
+            m_PSCInstance.transform.localPosition = Vector3.up;
         }
         if(m_PSCInstance != null)
             m_PSCInstance.SetActive(inActive);

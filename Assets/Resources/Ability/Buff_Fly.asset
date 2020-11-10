@@ -56,7 +56,7 @@ MonoBehaviour:
     moveType: 2
     direction: 5
     distance:
-    - 5
+    - 10
     rotateType: 2
     rotateAxis: 5
     rotateAngle:

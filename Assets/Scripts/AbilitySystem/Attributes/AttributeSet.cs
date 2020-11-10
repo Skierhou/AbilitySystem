@@ -7,10 +7,10 @@ public class AttributeSet : IAttributeSet
     private Dictionary<EAttributeType, FAttributeData> attributeMaps = new Dictionary<EAttributeType, FAttributeData>();
     public Dictionary<EAttributeType, FAttributeData> AttributeMap { get { return attributeMaps; } }
 
-    public void AddAttribute(EAttributeType attributeType, float baseValue)
+    public void AddAttribute(EAttributeType attributeType, float baseValue, bool isNormalData = false)
     {
         if (!attributeMaps.ContainsKey(attributeType))
-            attributeMaps.Add(attributeType, new FAttributeData(baseValue, true));
+            attributeMaps.Add(attributeType, new FAttributeData(baseValue, isNormalData));
     }
     public void RegisterDataChangedEvent(EAttributeType attributeType, UnityAction<float, float> dataChanged)
     {

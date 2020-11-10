@@ -16,7 +16,7 @@ public class AbilityTest : Ability
     [AbilityConfig]
     public List<FAbilityTagContainer> activity_Self_Buffs;
     [AbilityConfig]
-    public FAbilityTagContainer activity_Self_Buff;
+    public Texture2D Icon;
 
     protected override void OnAbilityStart()
     {

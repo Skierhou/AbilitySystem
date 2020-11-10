@@ -15,6 +15,7 @@ public class MovementComponent : MonoBehaviour
     public CharacterController CharacterController { get; protected set; }
 
     public bool IsDirectVelocity = true;
+    public bool IsGrounded { get { return CharacterController.isGrounded; } }
 
     //Motion
     public MotionClip MotionClip { get; protected set; }
@@ -48,7 +49,8 @@ public class MovementComponent : MonoBehaviour
         Velocity = CalculateVeloctiy();
         AngularVelocity = CalculateAngularVelocity();
 
-        CharacterController.Move(Velocity * Time.fixedDeltaTime);
+        CharacterController.Move((Velocity + Gravity) * Time.fixedDeltaTime);
+        Debug.Log(CharacterController.isGrounded);
         transform.eulerAngles += AngularVelocity * Time.fixedDeltaTime;
     }
     #region Motion
@@ -64,7 +66,7 @@ public class MovementComponent : MonoBehaviour
         }
         // 计算重力
         if (CharacterController.isGrounded)
-            Gravity = Vector3.zero;
+            Gravity = Physics.gravity;
         else
             Gravity += Physics.gravity * Time.fixedDeltaTime;
         Vector3 res = Vector3.zero;
@@ -74,11 +76,12 @@ public class MovementComponent : MonoBehaviour
             res += RootMotionClip.GetVelocity();
         if (Controller is object)
         {
-            res += Controller.GetInputVelocity();
-            if (IsDirectVelocity)
-                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(Controller.GetInputVelocity(), Vector3.up), Time.fixedDeltaTime * 10);
+            Vector3 inputVelocity = Controller.GetInputVelocity();
+            res += inputVelocity;
+            if (IsDirectVelocity && inputVelocity.sqrMagnitude >= 0.1f)
+                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(inputVelocity, Vector3.up), Time.fixedDeltaTime * 10);
         }
-        return res + Gravity;
+        return res;
     }
 
     public virtual Vector3 CalculateAngularVelocity()

@@ -41,7 +41,7 @@ public struct Editor_FMotionModifierData
     public int rotateCurve;
 };
 
-[CreateAssetMenu(fileName = "Assets/Scripts/AbilitySystem/Datas/NewAbilityConfig", menuName = "Ability/Create_AbilityConfig", order = 0)]
+[CreateAssetMenu(fileName = "Assets/Resources/Ability/NewAbilityConfig", menuName = "Ability/Create_AbilityConfig", order = 0)]
 [System.Serializable]
 public class AbilityEditorData : ScriptableObject
 {
@@ -141,8 +141,15 @@ public class AbilityEditorData : ScriptableObject
                         obj = GetTags(ref tag_index, abilityEditorData, type);
                     else
                         obj = unity_index < abilityEditorData.child_UnityDatas.Count ? abilityEditorData.child_UnityDatas[unity_index++] : null;
-                    if(obj != null)
-                        tFieldInfos[i].SetValue(owner, obj);
+                    try
+                    {
+                        if (obj != null)
+                            tFieldInfos[i].SetValue(owner, obj);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning(obj + " Set Error！" + e);
+                    }
                 }
             }
             type = type.BaseType;

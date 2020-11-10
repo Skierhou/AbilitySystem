@@ -5,7 +5,7 @@ public interface IAttributeSet
     /// <summary>
     /// 添加一个属性
     /// </summary>
-    void AddAttribute(EAttributeType attributeType, float baseValue);
+    void AddAttribute(EAttributeType attributeType, float baseValue, bool isNormalData = false);
     /// <summary>
     /// 注册数值变化事件
     /// </summary>

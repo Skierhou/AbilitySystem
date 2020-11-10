@@ -144,6 +144,7 @@ public class Projectile : MonoBehaviour,IProjectile
     {
         projectileData.projectileType = EProjectileType.PT_Normal;
         transform.forward = inDir.normalized;
+        projectileData.relativeForward = transform.forward;
 
         projectileData.StartLoc = inStartLoc;
         projectileData.accelerate = inAccelerate;
@@ -278,7 +279,8 @@ public class Projectile : MonoBehaviour,IProjectile
 
         m_Rigidbody.velocity = projectileData.speed * transform.forward.normalized;
         float rate = angularSpeed / (MathEx.ClampVector360(Quaternion.LookRotation(projectileData.Target.position - transform.position).eulerAngles) - MathEx.ClampVector360(transform.rotation.eulerAngles)).magnitude;
-        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(projectileData.Target.position - transform.position), rate * inDeltaTime);
+        Quaternion rot = Quaternion.LookRotation(projectileData.Target.position - transform.position);
+        transform.rotation = Quaternion.Lerp(transform.rotation, rot, rate * inDeltaTime);
     }
     /// <summary>
     /// 按曲线差值
@@ -366,21 +368,24 @@ public class Projectile : MonoBehaviour,IProjectile
     }
     protected virtual void LateUpdate()
     {
-        if (projectileData.Target != null && projectileData.projectileType != EProjectileType.PT_Target)
+        if (projectileData.projectileType != EProjectileType.PT_Target)
         {
-            transform.LookAt(projectileData.Target);
-        }
-        else
-        {
-            if (projectileData.IsLookTargetLoc)
+            if (projectileData.Target != null)
             {
-                transform.LookAt(projectileData.TargetLoc);
+                transform.LookAt(projectileData.Target);
             }
             else
             {
-                if (projectileData.IsDirectVelocity)
+                if (projectileData.IsLookTargetLoc)
                 {
-                    transform.LookAt(transform.position + projectileData.velocity);
+                    transform.LookAt(projectileData.TargetLoc);
+                }
+                else
+                {
+                    if (projectileData.IsDirectVelocity)
+                    {
+                        transform.LookAt(transform.position + projectileData.velocity);
+                    }
                 }
             }
         }

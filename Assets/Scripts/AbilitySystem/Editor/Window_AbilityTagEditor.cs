@@ -86,6 +86,7 @@ public class Window_AbilityTagEditor : EditorWindow
 
         OnValueChanged = valueChangedCallback;
         Window_AbilityTagEditor window = (Window_AbilityTagEditor)EditorWindow.GetWindow(typeof(Window_AbilityTagEditor));
+        window.titleContent = new GUIContent("AbilityTagManager");
         window.Show();
 
         InitToggle(nowTagList);

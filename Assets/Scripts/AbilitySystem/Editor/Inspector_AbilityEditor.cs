@@ -393,7 +393,6 @@ public class Inspector_AbilityEditorData : Editor
     }
     void CreateAbilityTag(List<string> list, EEditor_AbilityTagType tagType, string name)
     {
-        EditorGUI.indentLevel = 0;
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField(name + " : ");
         if (GUILayout.Button("+", GUILayout.MaxWidth(80)))
@@ -406,7 +405,7 @@ public class Inspector_AbilityEditorData : Editor
             list.Clear();
         }
         EditorGUILayout.EndHorizontal();
-        EditorGUI.indentLevel = 1;
+        ++EditorGUI.indentLevel;
         if (list != null)
         {
             for (int i = 0; i < list.Count; i++)
@@ -414,6 +413,7 @@ public class Inspector_AbilityEditorData : Editor
                 EditorGUILayout.LabelField(list[i]);
             }
         }
+        --EditorGUI.indentLevel;
         EditorGUILayout.Space(5);
     }
     void CreateBuffDataInfo(ref Editor_FAbilityBuffData data)

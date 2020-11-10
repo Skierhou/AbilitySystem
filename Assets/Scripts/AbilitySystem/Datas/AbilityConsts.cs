@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Assets/Scripts/AbilitySystem/Datas/_AbilityConsts", menuName = "Ability/Create_ConstsConfig", order = 0)]
+[CreateAssetMenu(fileName = "Assets/Resources/Ability/_AbilityConsts", menuName = "Ability/Create_ConstsConfig", order = 0)]
 [System.Serializable]
 public class AbilityConsts : ScriptableObject
 {

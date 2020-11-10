@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class BaseCharacter : Character
 {
     AbilitySystemComponent abilitySystem;
+    Animator animator;
 
     public Slider hp_slider;
     public Slider mp_slider;
@@ -13,6 +14,7 @@ public class BaseCharacter : Character
     private void Start()
     {
         abilitySystem = GetComponent<AbilitySystemComponent>();
+        animator = GetComponentInChildren<Animator>();
         abilitySystem.AcquireAbilityByTag(AbilityConsts.Instance.Fire);
         abilitySystem.AcquireAbilityByTag(AbilityConsts.Instance.Ice);
         abilitySystem.AcquireAbilityByTag(AbilityConsts.Instance.Wood);
@@ -35,6 +37,15 @@ public class BaseCharacter : Character
             abilitySystem.TryActivateAbilityByTag(AbilityConsts.Instance.Soil);
         else if (Input.GetKeyDown(KeyCode.Alpha5))
             abilitySystem.TryActivateAbilityByTag(AbilityConsts.Instance.Wood);
+
+        if (animator != null)
+        {
+            animator.SetBool("IsGrounded", MovementComponent.IsGrounded);
+            if (Controller.GetInputVelocity().sqrMagnitude > 0.1f)
+                animator.SetFloat("Fwd", 1.0f);
+            else
+                animator.SetFloat("Fwd", 0.0f);
+        }
     }
 
     void OnHealthChanged(float baseValue,float currentValue)

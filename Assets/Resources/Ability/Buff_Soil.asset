@@ -52,7 +52,12 @@ MonoBehaviour:
     - 5
     interval:
     - 1
-  Buff_Modifiers: []
+  Buff_Modifiers:
+  - attributeType: 2
+    modifierOption: 0
+    modifierType: 2
+    attributeMagnitudeList:
+    - -5
   Buff_MotionModifiers: []
   child_UnityDatas:
   - {fileID: 4589935254447489150, guid: 02a67aa08bd39704aaadd7426b6e7181, type: 3}

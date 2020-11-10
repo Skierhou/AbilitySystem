@@ -99,6 +99,7 @@ public class AbilitySystemComponent : MonoBehaviour, IAbilitySystem
             GUI.Label(new Rect(20, height, 200, 50), sb.ToString());
             height += 50;
         }
+        GUI.Label(new Rect(20, height, 200, 50), "金->木->土->水->火->金");
     }
 
     #region Ability
