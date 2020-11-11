@@ -51,11 +51,6 @@ public class AbilityEditorData : ScriptableObject
     public List<string> passiveAbilityListenerTags;
     public List<string> passiveAbilityTriggerTags;
 
-    public List<string> otherTags_1;
-    public List<string> otherTags_2;
-    public List<string> otherTags_3;
-    public List<string> otherTags_4;
-
     [Header("Is Open Block/Cannelable/Immediate")]
     public bool bImmediately;
     public bool bIsCancelable = true;
@@ -66,6 +61,11 @@ public class AbilityEditorData : ScriptableObject
     public float castPoint;
     public float totalTime;
 
+    [Header("SpellRange")]
+    public float spellRadius;
+    public EOverlapType spellOverlapType;
+    public Vector3 spellRange;
+
     [Header("LevelInfo")]
     public int maxLevel = 1;
     public int maxStack = 1;
@@ -74,6 +74,7 @@ public class AbilityEditorData : ScriptableObject
     public float channelStartTime;
     public float channelInterval;
     public float channelEndTime;
+
 
     [Header("OtherTags")]
     public List<string> abilityTags;
@@ -109,6 +110,12 @@ public class AbilityEditorData : ScriptableObject
     public List<bool> child_BaseDatas_Bool;
     public List<float> child_BaseDatas_Float;
     public List<string> child_BaseDatas_String;
+
+    /** 存子类反射的Tag标签 */
+    public List<string> otherTags_1;
+    public List<string> otherTags_2;
+    public List<string> otherTags_3;
+    public List<string> otherTags_4;
 
     public static void ReadChildInfo(Type type, AbilityEditorData abilityEditorData, object owner)
     {

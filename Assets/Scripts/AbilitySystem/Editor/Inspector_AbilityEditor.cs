@@ -40,6 +40,10 @@ public class Inspector_AbilityEditorData : Editor
     private SerializedProperty channelInterval;
     private SerializedProperty channelEndTime;
 
+    private SerializedProperty spellRadius;
+    private SerializedProperty spellRange;
+    private SerializedProperty spellOverlapType;
+
     private SerializedProperty targetType;
     private SerializedProperty maxLevel;
     private SerializedProperty maxStack;
@@ -50,21 +54,20 @@ public class Inspector_AbilityEditorData : Editor
     private SerializedProperty bIsCancelable;
     private SerializedProperty bIsBlockingOtherAbilities;
 
-    private bool bUseCoolDown;
-    private bool bUseCost;
     private SerializedProperty Buff_CoolDown;
     private SerializedProperty Buff_Cost;
     private SerializedProperty Buff_Modifiers;
     private SerializedProperty Buff_MotionModifiers;
 
-    private bool bUseChildInfos;
-    private bool bUseOtherTags;
     // 开关
     private List<bool> bUseLists;
+    private bool bUseCoolDown;
+    private bool bUseCost;
+    private bool bUseChildInfos;
+    private bool bUseOtherTags;
 
+    //临时索引
     int string_index = 0, int_index = 0, float_index = 0, bool_index = 0, unity_index , tag_index = 0;
-
-    bool bIsBuff = false;
 
     void OnEnable()
     {
@@ -72,9 +75,14 @@ public class Inspector_AbilityEditorData : Editor
         obj = new SerializedObject(target);
         AbilityScript = obj.FindProperty("AbilityScript");
         abilityType = obj.FindProperty("abilityType");
+
         channelStartTime = obj.FindProperty("channelStartTime");
         channelInterval = obj.FindProperty("channelInterval");
         channelEndTime = obj.FindProperty("channelEndTime");
+
+        spellRadius = obj.FindProperty("spellRadius");
+        spellRange = obj.FindProperty("spellRange");
+        spellOverlapType = obj.FindProperty("spellOverlapType");
 
         targetType = obj.FindProperty("targetType");
         castPoint = obj.FindProperty("castPoint");
@@ -124,152 +132,20 @@ public class Inspector_AbilityEditorData : Editor
             EditorGUILayout.LabelField("Please reference a class what extend AbilityBase！");
             return;
         }
-        bIsBuff = IsExtendsType(ability.AbilityScript.GetClass(), typeof(AbilityBuff));
+        bool bIsBuff = IsExtendsType(ability.AbilityScript.GetClass(), typeof(AbilityBuff));
 
         CreateAbilityTag(ability.abilityTags, EEditor_AbilityTagType.EATT_AbilityTags, "AbilityTags");
 
         EditorGUI.indentLevel = 0;
         EditorGUILayout.PropertyField(maxLevel);
 
-        if (!bIsBuff)
+        if (bIsBuff)
         {
-            // ability type
-            EditorGUILayout.Space(10);
-            EditorGUI.indentLevel = 0;
-            EditorGUILayout.PropertyField(abilityType);
-            if (abilityType.intValue == (int)EAbilityType.EAT_ChannelAbility)
-            {
-                EditorGUILayout.PropertyField(channelStartTime);
-                EditorGUILayout.PropertyField(channelInterval);
-                EditorGUILayout.PropertyField(channelEndTime);
-            }
-            if (abilityType.intValue == (int)EAbilityType.EAT_ToggleAbility
-                || abilityType.intValue == (int)EAbilityType.EAT_PassiveAblity)
-            {
-                if(abilityType.intValue == (int)EAbilityType.EAT_PassiveAblity)
-                    CreateAbilityTag(ability.passiveAbilityListenerTags, EEditor_AbilityTagType.EATT_PassiveAbilityListenerTags, "PassiveListenerTags");
-                CreateAbilityTag(ability.passiveAbilityTriggerTags, EEditor_AbilityTagType.EATT_PassiveAbilityTriggerTags, "TriggerTags");
-            }
-            else
-            {
-                EditorGUILayout.PropertyField(targetType);
-                EditorGUILayout.PropertyField(castPoint);
-                EditorGUILayout.PropertyField(totalTime);
-            }
-
-            // buff
-            EditorGUILayout.Space(10);
-            EditorGUI.indentLevel = 0;
-            if (bUseCoolDown = EditorGUILayout.ToggleLeft("Is Use CoolDown?", bUseCoolDown))
-            {
-                EditorGUI.indentLevel = 1;
-                EditorGUILayout.PropertyField(Buff_CoolDown);
-                ability.Buff_CoolDown = (AbilityEditorData)Buff_CoolDown.objectReferenceValue;
-            }
-            else
-            {
-                ability.Buff_CoolDown = null;
-            }
-            EditorGUI.indentLevel = 0;
-            if (bUseCost = EditorGUILayout.ToggleLeft("Is Use Cost?", bUseCost))
-            {
-                EditorGUI.indentLevel = 1;
-                EditorGUILayout.PropertyField(Buff_Cost);
-                ability.Buff_Cost = (AbilityEditorData)Buff_Cost.objectReferenceValue;
-                #region 暂时保留
-                //if (ability.Buff_Cost != null)
-                //{
-                //    CreateBuffDataInfo(ref ability.Buff_Data);
-                //    EditorGUILayout.PropertyField(Buff_Cost_Modifiers);
-                //    for (int i = 0; i < Buff_Cost_Modifiers.arraySize; i++)
-                //    {
-                //        while (ability.Buff_Modifiers.Count <= i)
-                //            ability.Buff_Modifiers.Add(new Editor_FModifierData());
-                //        Editor_FModifierData data = ability.Buff_Modifiers[i];
-                //        data.attributeType = (EAttributeType)Buff_Cost_Modifiers.GetArrayElementAtIndex(i).FindPropertyRelative("attributeType").intValue;
-                //        data.modifierOption = (EBuffModifierOption)Buff_Cost_Modifiers.GetArrayElementAtIndex(i).FindPropertyRelative("modifierOption").intValue;
-                //        data.modifierType = (EBuffModifierType)Buff_Cost_Modifiers.GetArrayElementAtIndex(i).FindPropertyRelative("modifierType").intValue;
-                //        SerializedProperty tSP = Buff_Cost_Modifiers.GetArrayElementAtIndex(i).FindPropertyRelative("attributeMagnitudeList");
-                //        if (data.attributeMagnitudeList == null)
-                //            data.attributeMagnitudeList = new List<float>();
-                //        else
-                //            data.attributeMagnitudeList.Clear();
-                //        for (int j = 0; j < maxLevel.intValue; j++)
-                //        {
-                //            if (j < tSP.arraySize)
-                //                data.attributeMagnitudeList.Add(tSP.GetArrayElementAtIndex(j).floatValue);
-                //            else
-                //                data.attributeMagnitudeList.Add(0);
-                //        }
-                //        tSP.arraySize = maxLevel.intValue;
-                //        ability.Buff_Modifiers[i] = data;
-                //    }
-                //}
-                #endregion
-            }
-            else
-            {
-                ability.Buff_Cost = null;
-            }
-            //EditorGUILayout.PropertyField(Activity_Self_Buffs);
-            //ability.Activity_Self_Buffs = new List<AbilityEditorData>();
-            //for (int i = 0; i < Activity_Self_Buffs.arraySize; i++)
-            //{
-            //    ability.Activity_Self_Buffs.Add(Activity_Self_Buffs.GetArrayElementAtIndex(i).objectReferenceValue as AbilityEditorData);
-            //}
-            //EditorGUILayout.PropertyField(Activity_Target_Buffs);
-            //ability.Activity_Target_Buffs = new List<AbilityEditorData>();
-            //for (int i = 0; i < Activity_Target_Buffs.arraySize; i++)
-            //{
-            //    ability.Activity_Target_Buffs.Add(Activity_Target_Buffs.GetArrayElementAtIndex(i).objectReferenceValue as AbilityEditorData);
-            //}
-            //CreateAbilityTag(ability.Activity_Self_Buffs, EEditor_AbilityTagType.EATT_ActivitySelfBuffTags, "ActivitySelfTags");
-            //CreateAbilityTag(ability.Activity_Target_Buffs, EEditor_AbilityTagType.EATT_ActivityTargetBuffTags, "ActivityTargetTags");
+            DrawBuffUI();
         }
         else
         {
-            EditorGUILayout.PropertyField(maxStack);
-            EditorGUILayout.LabelField("Buff Data");
-            ++EditorGUI.indentLevel;
-            CreateBuffDataInfo(ref ability.Buff_Data);
-            --EditorGUI.indentLevel;
-
-            EditorGUILayout.PropertyField(Buff_Modifiers,new GUIContent("Modifiers"));
-            while (ability.Buff_Modifiers.Count <= Buff_Modifiers.arraySize)
-                ability.Buff_Modifiers.Add(new Editor_FModifierData());
-            while (ability.Buff_Modifiers.Count > Buff_Modifiers.arraySize)
-                ability.Buff_Modifiers.RemoveAt(ability.Buff_Modifiers.Count - 1);
-
-            for (int i = 0; i < Buff_Modifiers.arraySize; i++)
-            {
-                Editor_FModifierData data = ability.Buff_Modifiers[i];
-                data.attributeType = (EAttributeType)Buff_Modifiers.GetArrayElementAtIndex(i).FindPropertyRelative("attributeType").intValue;
-                data.modifierOption = (EBuffModifierOption)Buff_Modifiers.GetArrayElementAtIndex(i).FindPropertyRelative("modifierOption").intValue;
-                data.modifierType = (EBuffModifierType)Buff_Modifiers.GetArrayElementAtIndex(i).FindPropertyRelative("modifierType").intValue;
-                SetList("attributeMagnitudeList", i, Buff_Modifiers, ref data.attributeMagnitudeList);
-                ability.Buff_Modifiers[i] = data;
-            }
-
-            EditorGUILayout.PropertyField(Buff_MotionModifiers, new GUIContent("MotionModifiers"));
-            while (ability.Buff_MotionModifiers.Count <= Buff_MotionModifiers.arraySize)
-                ability.Buff_MotionModifiers.Add(new Editor_FMotionModifierData());
-            while (ability.Buff_MotionModifiers.Count > Buff_MotionModifiers.arraySize)
-                ability.Buff_MotionModifiers.RemoveAt(ability.Buff_MotionModifiers.Count - 1);
-            for (int i = 0; i < Buff_MotionModifiers.arraySize; i++)
-            {
-                Editor_FMotionModifierData data = ability.Buff_MotionModifiers[i];
-                data.priority = Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("priority").intValue;
-                data.moveType = (EMotionType)Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("moveType").intValue;
-                data.direction = (EDirectType)Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("direction").intValue;
-                data.rotateType = (EMotionType)Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("rotateType").intValue;
-                data.rotateAxis = (EDirectType)Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("rotateAxis").intValue;
-                data.moveCurve = Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("moveCurve").intValue;
-                data.rotateCurve = Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("rotateCurve").intValue;
-                SetList("duration", i, Buff_MotionModifiers, ref data.duration);
-                SetList("distance", i, Buff_MotionModifiers, ref data.distance);
-                SetList("rotateAngle", i, Buff_MotionModifiers, ref data.rotateAngle);
-                ability.Buff_MotionModifiers[i] = data;
-            }
+            DrawAbilityUI();
         }
 
         // other
@@ -278,6 +154,7 @@ public class Inspector_AbilityEditorData : Editor
         EditorGUILayout.PropertyField(bIsCancelable);
         EditorGUILayout.PropertyField(bIsBlockingOtherAbilities);
 
+        // set value
         ability.abilityType = (EAbilityType)abilityType.intValue;
         ability.channelStartTime = channelStartTime.floatValue;
         ability.channelInterval = channelInterval.floatValue;
@@ -333,7 +210,139 @@ public class Inspector_AbilityEditorData : Editor
             AssetDatabase.Refresh();
         }
     }
+    void DrawAbilityUI()
+    {
+        // ability type
+        EditorGUILayout.Space(10);
+        EditorGUI.indentLevel = 0;
+        EditorGUILayout.PropertyField(abilityType);
+        if (abilityType.intValue == (int)EAbilityType.EAT_ChannelAbility)
+        {
+            EditorGUILayout.PropertyField(channelStartTime);
+            EditorGUILayout.PropertyField(channelInterval);
+            EditorGUILayout.PropertyField(channelEndTime);
+        }
+        if (abilityType.intValue == (int)EAbilityType.EAT_ToggleAbility
+            || abilityType.intValue == (int)EAbilityType.EAT_PassiveAblity)
+        {
+            if (abilityType.intValue == (int)EAbilityType.EAT_PassiveAblity)
+                CreateAbilityTag(ability.passiveAbilityListenerTags, EEditor_AbilityTagType.EATT_PassiveAbilityListenerTags, "PassiveListenerTags");
+            CreateAbilityTag(ability.passiveAbilityTriggerTags, EEditor_AbilityTagType.EATT_PassiveAbilityTriggerTags, "TriggerTags");
+        }
+        else
+        {
+            EditorGUILayout.PropertyField(targetType);
+            EditorGUILayout.PropertyField(castPoint);
+            EditorGUILayout.PropertyField(totalTime);
+            if (ability.targetType == ETargetType.ETT_Target)
+            {
+                EditorGUILayout.PropertyField(spellRadius);
+            }
+            else if (ability.targetType == ETargetType.ETT_Ground)
+            {
+                EditorGUILayout.PropertyField(spellRadius);
+                EditorGUILayout.PropertyField(spellOverlapType);
 
+                ability.spellOverlapType = (EOverlapType)spellOverlapType.intValue;
+                switch (ability.spellOverlapType)
+                {
+                    case EOverlapType.Sector:
+                        ability.spellRange.x = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Radius", ability.spellRange.x);
+                        ability.spellRange.y = (float)CreateBaseData(typeof(float), "_Angle", ability.spellRange.y);
+                        break;
+                    case EOverlapType.Triangle:
+                        ability.spellRange.x = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Bottom Length", ability.spellRange.x);
+                        ability.spellRange.y = (float)CreateBaseData(typeof(float), "_Height", ability.spellRange.y);
+                        break;
+                    case EOverlapType.Cylinder:
+                        ability.spellRange.x = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Radius", ability.spellRange.x);
+                        ability.spellRange.y = (float)CreateBaseData(typeof(float), "_Height", ability.spellRange.y);
+                        break;
+                    case EOverlapType.Sphere:
+                        ability.spellRange.x = ability.spellRange.y = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Radius", ability.spellRange.x);
+                        break;
+                    default:
+                        EditorGUILayout.PropertyField(spellRange, new GUIContent("_Content"));
+                        ability.spellRange.x = spellRange.FindPropertyRelative("x").floatValue;
+                        ability.spellRange.y = spellRange.FindPropertyRelative("y").floatValue;
+                        ability.spellRange.z = spellRange.FindPropertyRelative("z").floatValue;
+                        break;
+                }
+            }
+        }
+
+        // buff
+        EditorGUILayout.Space(10);
+        EditorGUI.indentLevel = 0;
+        if (bUseCoolDown = EditorGUILayout.ToggleLeft("Is Use CoolDown?", bUseCoolDown))
+        {
+            EditorGUI.indentLevel = 1;
+            EditorGUILayout.PropertyField(Buff_CoolDown);
+            ability.Buff_CoolDown = (AbilityEditorData)Buff_CoolDown.objectReferenceValue;
+        }
+        else
+        {
+            ability.Buff_CoolDown = null;
+        }
+        EditorGUI.indentLevel = 0;
+        if (bUseCost = EditorGUILayout.ToggleLeft("Is Use Cost?", bUseCost))
+        {
+            EditorGUI.indentLevel = 1;
+            EditorGUILayout.PropertyField(Buff_Cost);
+            ability.Buff_Cost = (AbilityEditorData)Buff_Cost.objectReferenceValue;
+        }
+        else
+        {
+            ability.Buff_Cost = null;
+        }
+    }
+
+    void DrawBuffUI()
+    {
+        EditorGUILayout.PropertyField(maxStack);
+        EditorGUILayout.LabelField("Buff Data");
+        ++EditorGUI.indentLevel;
+        CreateBuffDataInfo(ref ability.Buff_Data);
+        --EditorGUI.indentLevel;
+
+        EditorGUILayout.PropertyField(Buff_Modifiers, new GUIContent("Modifiers"));
+        while (ability.Buff_Modifiers.Count <= Buff_Modifiers.arraySize)
+            ability.Buff_Modifiers.Add(new Editor_FModifierData());
+        while (ability.Buff_Modifiers.Count > Buff_Modifiers.arraySize)
+            ability.Buff_Modifiers.RemoveAt(ability.Buff_Modifiers.Count - 1);
+
+        for (int i = 0; i < Buff_Modifiers.arraySize; i++)
+        {
+            Editor_FModifierData data = ability.Buff_Modifiers[i];
+            data.attributeType = (EAttributeType)Buff_Modifiers.GetArrayElementAtIndex(i).FindPropertyRelative("attributeType").intValue;
+            data.modifierOption = (EBuffModifierOption)Buff_Modifiers.GetArrayElementAtIndex(i).FindPropertyRelative("modifierOption").intValue;
+            data.modifierType = (EBuffModifierType)Buff_Modifiers.GetArrayElementAtIndex(i).FindPropertyRelative("modifierType").intValue;
+            SetList("attributeMagnitudeList", i, Buff_Modifiers, ref data.attributeMagnitudeList);
+            ability.Buff_Modifiers[i] = data;
+        }
+
+        EditorGUILayout.PropertyField(Buff_MotionModifiers, new GUIContent("MotionModifiers"));
+        while (ability.Buff_MotionModifiers.Count <= Buff_MotionModifiers.arraySize)
+            ability.Buff_MotionModifiers.Add(new Editor_FMotionModifierData());
+        while (ability.Buff_MotionModifiers.Count > Buff_MotionModifiers.arraySize)
+            ability.Buff_MotionModifiers.RemoveAt(ability.Buff_MotionModifiers.Count - 1);
+        for (int i = 0; i < Buff_MotionModifiers.arraySize; i++)
+        {
+            Editor_FMotionModifierData data = ability.Buff_MotionModifiers[i];
+            data.priority = Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("priority").intValue;
+            data.moveType = (EMotionType)Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("moveType").intValue;
+            data.direction = (EDirectType)Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("direction").intValue;
+            data.rotateType = (EMotionType)Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("rotateType").intValue;
+            data.rotateAxis = (EDirectType)Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("rotateAxis").intValue;
+            data.moveCurve = Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("moveCurve").intValue;
+            data.rotateCurve = Buff_MotionModifiers.GetArrayElementAtIndex(i).FindPropertyRelative("rotateCurve").intValue;
+            SetList("duration", i, Buff_MotionModifiers, ref data.duration);
+            SetList("distance", i, Buff_MotionModifiers, ref data.distance);
+            SetList("rotateAngle", i, Buff_MotionModifiers, ref data.rotateAngle);
+            ability.Buff_MotionModifiers[i] = data;
+        }
+    }
+    
     void OnAbilityTagsChange(List<string> list)
     {
         switch (tagWidgitSelectType)

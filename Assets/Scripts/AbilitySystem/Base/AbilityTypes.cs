@@ -67,6 +67,15 @@ public enum EOperationKey
     EOK_Up,
 };
 
+public enum EOverlapType
+{
+    Sphere,     //圆      x = y = z = 2*radius
+    Box,        //方形    x = width， z = length， y = height
+    Cylinder,   //圆柱    x = z = 2*raidus， y = height
+    Sector,     //扇形    x = z = 2*raidus， y = angle°
+    Triangle,   //三角形  x = z = edgeLength， y = height (只适用于等腰三角形)
+};
+
 public struct FAbilityData
 {
     // ability
@@ -79,7 +88,9 @@ public struct FAbilityData
     public ESelectTarget selectTargetStatus;
 
     // 施法范围
-    public float spellRange;
+    public float spellRadius;
+    public EOverlapType spellOverlapType;
+    public Vector3 spellRange;
     // OnSpell回调时间点
     public float castPoint;
     public float totalTime;

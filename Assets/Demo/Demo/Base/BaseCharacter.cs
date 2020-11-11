@@ -41,7 +41,7 @@ public class BaseCharacter : Character
         if (animator != null)
         {
             animator.SetBool("IsGrounded", MovementComponent.IsGrounded);
-            if (Controller.GetInputVelocity().sqrMagnitude > 0.1f)
+            if (Controller.GetInputVelocity().sqrMagnitude > 0.1f && MovementComponent.Velocity.sqrMagnitude > 0.1f)
                 animator.SetFloat("Fwd", 1.0f);
             else
                 animator.SetFloat("Fwd", 0.0f);

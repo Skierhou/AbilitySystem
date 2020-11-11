@@ -16,7 +16,8 @@ public class Ability: AbilityBase, IAbility
 {
     #region 字段/属性
     /// 技能数据
-    public FAbilityData abilityData;
+    protected FAbilityData abilityData;
+    public FAbilityData AbilityData { get { return abilityData; }  }
 
     /// 通用
     public AbilityBuff effect_CoolDown;
@@ -40,6 +41,10 @@ public class Ability: AbilityBase, IAbility
         abilityData.channelEndTime = abilityEditorData.channelEndTime;
         abilityData.targetType = abilityEditorData.targetType;
         abilityData.totalTime = abilityEditorData.totalTime;
+
+        abilityData.spellRadius = abilityEditorData.spellRadius;
+        abilityData.spellRange = abilityEditorData.spellRange;
+        abilityData.spellOverlapType = abilityEditorData.spellOverlapType;
         if (abilityEditorData.Buff_CoolDown != null)
         {
             effect_CoolDown = AbilityManager.Instance.CreateAbility(AbilityTagManager.Instance.GetTagContainer(abilityEditorData.Buff_CoolDown.abilityTags[0]),abilitySystem) as AbilityBuff;
