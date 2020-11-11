@@ -34,25 +34,6 @@ public class Inspector_AbilityEditorData : Editor
     private SerializedObject obj;
 
     private SerializedProperty AbilityScript;
-    private SerializedProperty abilityType;
-
-    private SerializedProperty channelStartTime;
-    private SerializedProperty channelInterval;
-    private SerializedProperty channelEndTime;
-
-    private SerializedProperty spellRadius;
-    private SerializedProperty spellRange;
-    private SerializedProperty spellOverlapType;
-
-    private SerializedProperty targetType;
-    private SerializedProperty maxLevel;
-    private SerializedProperty maxStack;
-    private SerializedProperty castPoint;
-    private SerializedProperty totalTime;
-
-    private SerializedProperty bImmediately;
-    private SerializedProperty bIsCancelable;
-    private SerializedProperty bIsBlockingOtherAbilities;
 
     private SerializedProperty Buff_CoolDown;
     private SerializedProperty Buff_Cost;
@@ -61,10 +42,6 @@ public class Inspector_AbilityEditorData : Editor
 
     // 开关
     private List<bool> bUseLists;
-    private bool bUseCoolDown;
-    private bool bUseCost;
-    private bool bUseChildInfos;
-    private bool bUseOtherTags;
 
     //临时索引
     int string_index = 0, int_index = 0, float_index = 0, bool_index = 0, unity_index , tag_index = 0;
@@ -74,35 +51,12 @@ public class Inspector_AbilityEditorData : Editor
         ability = (AbilityEditorData)target;
         obj = new SerializedObject(target);
         AbilityScript = obj.FindProperty("AbilityScript");
-        abilityType = obj.FindProperty("abilityType");
-
-        channelStartTime = obj.FindProperty("channelStartTime");
-        channelInterval = obj.FindProperty("channelInterval");
-        channelEndTime = obj.FindProperty("channelEndTime");
-
-        spellRadius = obj.FindProperty("spellRadius");
-        spellRange = obj.FindProperty("spellRange");
-        spellOverlapType = obj.FindProperty("spellOverlapType");
-
-        targetType = obj.FindProperty("targetType");
-        castPoint = obj.FindProperty("castPoint");
-        totalTime = obj.FindProperty("totalTime");
-        maxLevel = obj.FindProperty("maxLevel");
-        maxStack = obj.FindProperty("maxStack");
-
-        bImmediately = obj.FindProperty("bImmediately");
-        bIsCancelable = obj.FindProperty("bIsCancelable");
-        bIsBlockingOtherAbilities = obj.FindProperty("bIsBlockingOtherAbilities");
 
         Buff_CoolDown = obj.FindProperty("Buff_CoolDown");
         Buff_Cost = obj.FindProperty("Buff_Cost");
         Buff_Modifiers = obj.FindProperty("Buff_Modifiers");
         Buff_MotionModifiers = obj.FindProperty("Buff_MotionModifiers");
 
-        bUseCoolDown = ability.Buff_CoolDown is object;
-        bUseCost = ability.Buff_Cost is object;
-
-        bUseChildInfos = (ability.child_UnityDatas is object && ability.child_UnityDatas.Count > 0);
         if (ability.child_UnityDatas == null)
             ability.child_UnityDatas = new List<UnityEngine.Object>();
         if (ability.child_BaseDatas_Int == null)
@@ -132,12 +86,11 @@ public class Inspector_AbilityEditorData : Editor
             EditorGUILayout.LabelField("Please reference a class what extend AbilityBase！");
             return;
         }
+        ability.AbilityScript = (MonoScript)AbilityScript.objectReferenceValue;
+
         bool bIsBuff = IsExtendsType(ability.AbilityScript.GetClass(), typeof(AbilityBuff));
 
         CreateAbilityTag(ability.abilityTags, EEditor_AbilityTagType.EATT_AbilityTags, "AbilityTags");
-
-        EditorGUI.indentLevel = 0;
-        EditorGUILayout.PropertyField(maxLevel);
 
         if (bIsBuff)
         {
@@ -147,31 +100,13 @@ public class Inspector_AbilityEditorData : Editor
         {
             DrawAbilityUI();
         }
-
-        // other
-        EditorGUI.indentLevel = 0;
-        EditorGUILayout.PropertyField(bImmediately);
-        EditorGUILayout.PropertyField(bIsCancelable);
-        EditorGUILayout.PropertyField(bIsBlockingOtherAbilities);
-
-        // set value
-        ability.abilityType = (EAbilityType)abilityType.intValue;
-        ability.channelStartTime = channelStartTime.floatValue;
-        ability.channelInterval = channelInterval.floatValue;
-        ability.channelEndTime = channelEndTime.floatValue;
-        ability.targetType = (ETargetType)targetType.intValue;
-        ability.castPoint = castPoint.floatValue;
-        ability.totalTime = totalTime.floatValue;
-        ability.maxLevel = maxLevel.intValue;
-        ability.maxStack = maxStack.intValue;
-        ability.bImmediately = bImmediately.boolValue;
-        ability.bIsCancelable = bIsCancelable.boolValue;
-        ability.bIsBlockingOtherAbilities = bIsBlockingOtherAbilities.boolValue;
-        ability.AbilityScript = (MonoScript)AbilityScript.objectReferenceValue;
-
-        EditorGUI.indentLevel = 0;
-        EditorGUILayout.Space(10);
-        if (bUseOtherTags = EditorGUILayout.Foldout(bUseOtherTags, "Other Tags :"))
+        if (Title("Is Open Block / Cannelable / Immediate ：", 0))
+        {
+            ability.bImmediately = (bool)CreateBaseData(typeof(bool), "Is Immediately", ability.bImmediately);
+            ability.bIsCancelable = (bool)CreateBaseData(typeof(bool), "Is Cancelable", ability.bIsCancelable);
+            ability.bIsBlockingOtherAbilities = (bool)CreateBaseData(typeof(bool), "Is Blocking Other Abilities：", ability.bIsBlockingOtherAbilities);
+        }
+        if (Title("Other Tags :", 1))
         {
             CreateAbilityTag(ability.cancelAbilitiesWithTags, EEditor_AbilityTagType.EATT_CancelAbilitiesWithTags, "CancelAbilitiesWithTags");
             CreateAbilityTag(ability.blockAbilitiesWithTags, EEditor_AbilityTagType.EATT_BlockAbilitiesWithTags, "BlockAbilitiesWithTags"); ;
@@ -181,15 +116,12 @@ public class Inspector_AbilityEditorData : Editor
             CreateAbilityTag(ability.targetRequiredTags, EEditor_AbilityTagType.EATT_TargetRequiredTags, "TargetRequiredTags");
             CreateAbilityTag(ability.targetBlockedTags, EEditor_AbilityTagType.EATT_TargetBlockedTags, "TargetBlockedTags");
         }
-
-        EditorGUILayout.Space(10);
-        EditorGUI.indentLevel = 0;
-        if (bUseChildInfos = EditorGUILayout.Foldout(bUseChildInfos, "Child Infos :"))
+        if (Title("Child Infos :", 2))
         {
-            EditorGUI.indentLevel = 1;
             CreateScriptInfos(ability.AbilityScript.GetClass());
         }
-        //Unity .Asset保存有bug 需要自己主动保存，而且需要删除原来的创建新的 不然会丢失数据
+        //Unity .Asset保存有bug 需要自己主动保存
+        EditorGUILayout.Space(10);
         if (GUILayout.Button("保存", GUILayout.MaxWidth(100)))
         {
             AbilityEditorData data = CreateInstance<AbilityEditorData>();
@@ -201,9 +133,7 @@ public class Inspector_AbilityEditorData : Editor
             string path1 = "Assets/Resources/Ability/" + ability.name + ".asset";
             string path2 = "Assets/Resources/Ability/" + ability.name + "_.asset";
 
-            //AssetDatabase.DeleteAsset(path);
-            //AssetDatabase.CreateAsset(data, path);
-            //移动资源这种方式保存， 删除再次创建资源引用会丢失
+            //移动资源这种方式保存
             AssetDatabase.MoveAsset(path1, path2);
             AssetDatabase.MoveAsset(path2, path1);
             AssetDatabase.SaveAssets();
@@ -212,100 +142,109 @@ public class Inspector_AbilityEditorData : Editor
     }
     void DrawAbilityUI()
     {
-        // ability type
-        EditorGUILayout.Space(10);
-        EditorGUI.indentLevel = 0;
-        EditorGUILayout.PropertyField(abilityType);
-        if (abilityType.intValue == (int)EAbilityType.EAT_ChannelAbility)
+        if (Title("Ability Data : ", 14))
         {
-            EditorGUILayout.PropertyField(channelStartTime);
-            EditorGUILayout.PropertyField(channelInterval);
-            EditorGUILayout.PropertyField(channelEndTime);
-        }
-        if (abilityType.intValue == (int)EAbilityType.EAT_ToggleAbility
-            || abilityType.intValue == (int)EAbilityType.EAT_PassiveAblity)
-        {
-            if (abilityType.intValue == (int)EAbilityType.EAT_PassiveAblity)
-                CreateAbilityTag(ability.passiveAbilityListenerTags, EEditor_AbilityTagType.EATT_PassiveAbilityListenerTags, "PassiveListenerTags");
-            CreateAbilityTag(ability.passiveAbilityTriggerTags, EEditor_AbilityTagType.EATT_PassiveAbilityTriggerTags, "TriggerTags");
-        }
-        else
-        {
-            EditorGUILayout.PropertyField(targetType);
-            EditorGUILayout.PropertyField(castPoint);
-            EditorGUILayout.PropertyField(totalTime);
-            if (ability.targetType == ETargetType.ETT_Target)
-            {
-                EditorGUILayout.PropertyField(spellRadius);
-            }
-            else if (ability.targetType == ETargetType.ETT_Ground)
-            {
-                EditorGUILayout.PropertyField(spellRadius);
-                EditorGUILayout.PropertyField(spellOverlapType);
+            ability.maxLevel = (int)CreateBaseData(typeof(int), "Max Level", ability.maxLevel);
+            ability.abilityType = (EAbilityType)CreateBaseData(typeof(EAbilityType), "AbilityType", ability.abilityType);
 
-                ability.spellOverlapType = (EOverlapType)spellOverlapType.intValue;
-                switch (ability.spellOverlapType)
+            if (ability.abilityType == EAbilityType.EAT_PassiveAblity)
+            {
+                if (Title("Passive Setting ：", 3 , 1))
                 {
-                    case EOverlapType.Sector:
-                        ability.spellRange.x = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Radius", ability.spellRange.x);
-                        ability.spellRange.y = (float)CreateBaseData(typeof(float), "_Angle", ability.spellRange.y);
-                        break;
-                    case EOverlapType.Triangle:
-                        ability.spellRange.x = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Bottom Length", ability.spellRange.x);
-                        ability.spellRange.y = (float)CreateBaseData(typeof(float), "_Height", ability.spellRange.y);
-                        break;
-                    case EOverlapType.Cylinder:
-                        ability.spellRange.x = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Radius", ability.spellRange.x);
-                        ability.spellRange.y = (float)CreateBaseData(typeof(float), "_Height", ability.spellRange.y);
-                        break;
-                    case EOverlapType.Sphere:
-                        ability.spellRange.x = ability.spellRange.y = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Radius", ability.spellRange.x);
-                        break;
-                    default:
-                        EditorGUILayout.PropertyField(spellRange, new GUIContent("_Content"));
-                        ability.spellRange.x = spellRange.FindPropertyRelative("x").floatValue;
-                        ability.spellRange.y = spellRange.FindPropertyRelative("y").floatValue;
-                        ability.spellRange.z = spellRange.FindPropertyRelative("z").floatValue;
-                        break;
+                    CreateAbilityTag(ability.passiveAbilityListenerTags, EEditor_AbilityTagType.EATT_PassiveAbilityListenerTags, "PassiveListenerTags");
+                    CreateAbilityTag(ability.passiveAbilityTriggerTags, EEditor_AbilityTagType.EATT_PassiveAbilityTriggerTags, "TriggerTags");
+                }
+            }
+            else if (ability.abilityType == EAbilityType.EAT_ToggleAbility)
+            {
+                if (Title("Toggle Setting ：", 4, 1))
+                    CreateAbilityTag(ability.passiveAbilityTriggerTags, EEditor_AbilityTagType.EATT_PassiveAbilityTriggerTags, "TriggerTags");
+            }
+            else
+            {
+                if (Title("General Data：", 5, 1))
+                {
+                    ability.targetType = (ETargetType)CreateBaseData(typeof(ETargetType), "Select Target Type", ability.targetType);
+                    ability.castPoint = (float)CreateBaseData(typeof(float), "Cast Point", ability.castPoint);
+                    ability.totalTime = (float)CreateBaseData(typeof(float), "Total Time", ability.totalTime);
+                }
+
+                if (ability.abilityType == EAbilityType.EAT_ChannelAbility)
+                {
+                    if (Title("Channel Setting ：", 6, 1))
+                    {
+                        ability.channelStartTime = (float)CreateBaseData(typeof(float), "Channel Start Time", ability.channelStartTime);
+                        ability.channelInterval = (float)CreateBaseData(typeof(float), "Channel Interval", ability.channelInterval);
+                        ability.channelEndTime = (float)CreateBaseData(typeof(float), "Channel End Time", ability.channelEndTime);
+                    }
+                }
+
+                if (ability.targetType == ETargetType.ETT_Target)
+                {
+                    if (Title("Spell Range ：", 7, 1))
+                    {
+                        ability.spellRadius = (float)CreateBaseData(typeof(float), "Spell Radius", ability.spellRadius);
+                    }
+                }
+                else if (ability.targetType == ETargetType.ETT_Ground)
+                {
+                    if (Title("Spell Range ：", 8, 1))
+                    {
+                        ability.spellRadius = (float)CreateBaseData(typeof(float), "Spell Radius", ability.spellRadius);
+                        ability.spellOverlapType = (EOverlapType)CreateBaseData(typeof(EOverlapType), "Spell Overlap Type", ability.spellOverlapType);
+                        ++EditorGUI.indentLevel;
+                        switch (ability.spellOverlapType)
+                        {
+                            case EOverlapType.Sector:
+                                ability.spellRange.x = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Radius", ability.spellRange.x);
+                                ability.spellRange.y = (float)CreateBaseData(typeof(float), "_Angle", ability.spellRange.y);
+                                break;
+                            case EOverlapType.Triangle:
+                                ability.spellRange.x = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Bottom Length", ability.spellRange.x);
+                                ability.spellRange.y = (float)CreateBaseData(typeof(float), "_Height", ability.spellRange.y);
+                                break;
+                            case EOverlapType.Cylinder:
+                                ability.spellRange.x = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Radius", ability.spellRange.x);
+                                ability.spellRange.y = (float)CreateBaseData(typeof(float), "_Height", ability.spellRange.y);
+                                break;
+                            case EOverlapType.Sphere:
+                                ability.spellRange.x = ability.spellRange.y = ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Radius", ability.spellRange.x);
+                                break;
+                            default:
+                                ability.spellRange.x = (float)CreateBaseData(typeof(float), "_X", ability.spellRange.x);
+                                ability.spellRange.y = (float)CreateBaseData(typeof(float), "_Y", ability.spellRange.y);
+                                ability.spellRange.z = (float)CreateBaseData(typeof(float), "_Z", ability.spellRange.z);
+                                break;
+                        }
+                        --EditorGUI.indentLevel;
+                    }
                 }
             }
         }
 
         // buff
-        EditorGUILayout.Space(10);
-        EditorGUI.indentLevel = 0;
-        if (bUseCoolDown = EditorGUILayout.ToggleLeft("Is Use CoolDown?", bUseCoolDown))
+        if (Title("CoolDown  /  Cost ：",9))
         {
-            EditorGUI.indentLevel = 1;
             EditorGUILayout.PropertyField(Buff_CoolDown);
             ability.Buff_CoolDown = (AbilityEditorData)Buff_CoolDown.objectReferenceValue;
-        }
-        else
-        {
-            ability.Buff_CoolDown = null;
-        }
-        EditorGUI.indentLevel = 0;
-        if (bUseCost = EditorGUILayout.ToggleLeft("Is Use Cost?", bUseCost))
-        {
-            EditorGUI.indentLevel = 1;
+
             EditorGUILayout.PropertyField(Buff_Cost);
             ability.Buff_Cost = (AbilityEditorData)Buff_Cost.objectReferenceValue;
-        }
-        else
-        {
-            ability.Buff_Cost = null;
         }
     }
 
     void DrawBuffUI()
     {
-        EditorGUILayout.PropertyField(maxStack);
-        EditorGUILayout.LabelField("Buff Data");
-        ++EditorGUI.indentLevel;
-        CreateBuffDataInfo(ref ability.Buff_Data);
-        --EditorGUI.indentLevel;
+        if (Title("Buff Data ： ", 10))
+        {
+            ability.maxLevel = (int)CreateBaseData(typeof(int), "Max Level", ability.maxLevel);
+            ability.maxStack = (int)CreateBaseData(typeof(int), "Max Stack", ability.maxStack);
+            CreateBuffDataInfo(ref ability.Buff_Data);
+        }
 
-        EditorGUILayout.PropertyField(Buff_Modifiers, new GUIContent("Modifiers"));
+        EditorGUILayout.Space(10);
+        EditorGUI.indentLevel = 0;
+        EditorGUILayout.PropertyField(Buff_Modifiers, new GUIContent("Modifiers ： "));
         while (ability.Buff_Modifiers.Count <= Buff_Modifiers.arraySize)
             ability.Buff_Modifiers.Add(new Editor_FModifierData());
         while (ability.Buff_Modifiers.Count > Buff_Modifiers.arraySize)
@@ -321,7 +260,8 @@ public class Inspector_AbilityEditorData : Editor
             ability.Buff_Modifiers[i] = data;
         }
 
-        EditorGUILayout.PropertyField(Buff_MotionModifiers, new GUIContent("MotionModifiers"));
+        EditorGUILayout.Space(10);
+        EditorGUILayout.PropertyField(Buff_MotionModifiers, new GUIContent("MotionModifiers ： "));
         while (ability.Buff_MotionModifiers.Count <= Buff_MotionModifiers.arraySize)
             ability.Buff_MotionModifiers.Add(new Editor_FMotionModifierData());
         while (ability.Buff_MotionModifiers.Count > Buff_MotionModifiers.arraySize)
@@ -400,6 +340,7 @@ public class Inspector_AbilityEditorData : Editor
                 break;
         }
     }
+    
     void CreateAbilityTag(List<string> list, EEditor_AbilityTagType tagType, string name)
     {
         EditorGUILayout.BeginHorizontal();
@@ -425,6 +366,7 @@ public class Inspector_AbilityEditorData : Editor
         --EditorGUI.indentLevel;
         EditorGUILayout.Space(5);
     }
+    
     void CreateBuffDataInfo(ref Editor_FAbilityBuffData data)
     {
         data.durationPolicy = (EDurationPolicy)CreateBaseData(data.durationPolicy.GetType(), "DurationPolicy", data.durationPolicy);
@@ -432,14 +374,14 @@ public class Inspector_AbilityEditorData : Editor
         {
             ++EditorGUI.indentLevel;
 
-            data.duration = CreateList("Duration", ability.maxLevel, ref data.duration, 0);
+            data.duration = CreateList("Duration", ability.maxLevel, ref data.duration, 12);
             --EditorGUI.indentLevel;
         }
         if (data.durationPolicy == EDurationPolicy.EDP_HasDuration 
             || data.durationPolicy == EDurationPolicy.EDP_Infinite)
         {
             ++EditorGUI.indentLevel;
-            data.interval = CreateList("Interval", ability.maxLevel, ref data.interval, 1);
+            data.interval = CreateList("Interval", ability.maxLevel, ref data.interval, 13);
             --EditorGUI.indentLevel;
         }
     }
@@ -451,32 +393,34 @@ public class Inspector_AbilityEditorData : Editor
             FieldInfo[] tFieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public);
             if (tFieldInfos.Length > 0)
             {
-                bool bTitle = false;
-                for (int i = 0; i < tFieldInfos.Length; i++)
+                int index = 0;
+                for (; index < tFieldInfos.Length; index++)
                 {
-                    if (tFieldInfos[i].GetCustomAttribute(typeof(AbilityConfig)) == null)
-                        continue;
-                    if (!bTitle)
+                    if (tFieldInfos[index].GetCustomAttribute(typeof(AbilityConfig)) != null)
+                        break;
+                }
+
+                if (index < tFieldInfos.Length && Title(type + " ： ", 11, 1))
+                {
+                    for (int i = 0; i < tFieldInfos.Length; i++)
                     {
-                        EditorGUI.indentLevel = 1;
-                        EditorGUILayout.LabelField(type + " :");
-                        EditorGUI.indentLevel = 2;
-                        bTitle = true;
-                    }
-                    if (tFieldInfos[i].FieldType == typeof(List<FAbilityTagContainer>) || tFieldInfos[i].FieldType == typeof(FAbilityTagContainer))
-                    {
-                        CreateAbilityOtherTags(tFieldInfos[i].Name, tFieldInfos[i].FieldType);
-                    }
-                    else if (IsBaseData(tFieldInfos[i].FieldType))
-                    {
-                        CreateBaseData(tFieldInfos[i].FieldType, tFieldInfos[i].Name);
-                    }
-                    else
-                    {
-                        if (ability.child_UnityDatas.Count <= unity_index)
-                            ability.child_UnityDatas.Add(null);
-                        ability.child_UnityDatas[unity_index] = EditorGUILayout.ObjectField(tFieldInfos[i].Name, ability.child_UnityDatas[unity_index], tFieldInfos[i].FieldType, true);
-                        ++unity_index;
+                        if (tFieldInfos[i].GetCustomAttribute(typeof(AbilityConfig)) == null)
+                            continue;
+                        if (tFieldInfos[i].FieldType == typeof(List<FAbilityTagContainer>) || tFieldInfos[i].FieldType == typeof(FAbilityTagContainer))
+                        {
+                            CreateAbilityOtherTags(tFieldInfos[i].Name, tFieldInfos[i].FieldType);
+                        }
+                        else if (IsBaseData(tFieldInfos[i].FieldType))
+                        {
+                            CreateBaseData(tFieldInfos[i].FieldType, tFieldInfos[i].Name);
+                        }
+                        else
+                        {
+                            if (ability.child_UnityDatas.Count <= unity_index)
+                                ability.child_UnityDatas.Add(null);
+                            ability.child_UnityDatas[unity_index] = EditorGUILayout.ObjectField(tFieldInfos[i].Name, ability.child_UnityDatas[unity_index], tFieldInfos[i].FieldType, true);
+                            ++unity_index;
+                        }
                     }
                 }
             }
@@ -539,6 +483,7 @@ public class Inspector_AbilityEditorData : Editor
         }
         return false;
     }
+    
     void CreateBaseData(Type type, string name)
     {
         if (type == typeof(Int16) || type == typeof(Int32) || type == typeof(Int64))
@@ -610,6 +555,7 @@ public class Inspector_AbilityEditorData : Editor
             Debug.LogError("Type : " + type + " is not distinguish !");
         }
     }
+    
     object CreateBaseData(Type type, string name, object defaultValue)
     {
         if (type == typeof(Int16) || type == typeof(Int32) || type == typeof(Int64))
@@ -708,13 +654,27 @@ public class Inspector_AbilityEditorData : Editor
             list = new List<float>();
         else
             list.Clear();
-        for (int j = 0; j < maxLevel.intValue; j++)
+        for (int j = 0; j < ability.maxLevel; j++)
         {
             if (j < tSP.arraySize)
                 list.Add(tSP.GetArrayElementAtIndex(j).floatValue);
             else
                 list.Add(default);
         }
-        tSP.arraySize = maxLevel.intValue;
+        tSP.arraySize = ability.maxLevel;
+    }
+
+    bool Title(string title,int toggleIndex ,int indentLevel = 0)
+    {
+        if (bUseLists == null)
+            bUseLists = new List<bool>();
+        while (bUseLists.Count <= toggleIndex)
+            bUseLists.Add(false);
+
+        EditorGUILayout.Space(10);
+        EditorGUI.indentLevel = indentLevel;
+        bUseLists[toggleIndex] = EditorGUILayout.Foldout(bUseLists[toggleIndex], title);
+        ++EditorGUI.indentLevel;
+        return bUseLists[toggleIndex];
     }
 }

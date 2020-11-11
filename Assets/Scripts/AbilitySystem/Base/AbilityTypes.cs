@@ -10,7 +10,7 @@ public enum EAbilityType
     EAT_PassiveAblity = 0,      //被动
     EAT_GeneralAbility = 1,     //普通
     EAT_ChannelAbility = 2,     //引导
-    EAT_ToggleAbility = 4,      //开关
+    EAT_ToggleAbility = 3,      //开关
 };
 /// <summary>
 /// 目标类型
