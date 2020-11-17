@@ -188,7 +188,7 @@ public class Ability: AbilityBase, IAbility
             abilityData.selectTargetStatus = ESelectTarget.ST_WaitingSelect;
             WaitingSelectTarget waitingSelect = GetWaitingSelectTarget();
             yield return waitingSelect;
-            abilityData.selectTargetStatus = waitingSelect.selectTargetStatus;
+            abilityData.selectTargetStatus = waitingSelect.SelectTargetStatus;
         }
         if (abilityData.selectTargetStatus != ESelectTarget.ST_SelectFail)
         {
